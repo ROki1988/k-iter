@@ -1,0 +1,10 @@
+[package]
+name = "k-iter"
+version = "0.1.0"
+authors = ["ROki1988 <roki.swindler@gmail.com>"]
+
+[dependencies]
+clap = "2.31.2"
+rusoto_core = "0.32.0"
+rusoto_kinesis = "0.32.0"
+ctrlc = { version = "3.0", features = ["termination"] }
