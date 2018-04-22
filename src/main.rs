@@ -153,10 +153,9 @@ fn main() {
     let name = value_t_or_exit!(matches.value_of("stream-name"), String);
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
     let region = value_t_or_exit!(matches.value_of("region"), Region);
-
     let mut it = KinesisIterator::new(name, id, region);
 
-    println!("Waiting for Ctrl-C...");
+
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
