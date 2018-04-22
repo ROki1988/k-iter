@@ -122,7 +122,7 @@ build: false
 test_script:
   - cargo build --verbose
 
-before_deploy:
+after_test:
   # Generate artifacts for release
   - cargo build --release
   - mkdir staging
