@@ -1,0 +1,58 @@
+language: rust
+dist: trusty
+
+cache: cargo
+matrix:
+  # allow_failures:
+  #   - rust: nightly
+  include:
+    # Stable channel.
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-gnu
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-musl
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
+
+
+before_script:
+  - rustc -V
+  - cargo -V
+  - if [[ "${TARGET}" == "i686-unknown-linux-gnu" ]]; then rustup target add $TARGET; fi
+  - |
+    if [[ "${TARGET}" == "aarch64-unknown-linux-gnu" ]]; then
+        rustup target add $TARGET
+        aarch64-linux-gnu-gcc -v
+        mkdir -p .cargo
+        echo "[target.${TARGET}]" > .cargo/config
+        echo "linker = \"aarch64-linux-gnu-gcc\"" >> .cargo/config
+        cat .cargo/config
+    fi
+  - git --version
+  - echo $TRAVIS_BRANCH
+  - git checkout $TRAVIS_BRANCH
+  - git rev-parse HEAD
+
+script:
+  - cargo build --target $TARGET
+  - RUST_TEST_TASKS=1 cargo test --verbose -- --test-threads 1
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+
+before_deploy:
+  - cargo build --target $TARGET --release
+  - mkdir "k-iter-${TRAVIS_TAG}-${TARGET}"
+  - cp target/$TARGET/release/k-iter LICENSE README.md "k-iter-${TRAVIS_TAG}-${TARGET}"
+  - zip "k-iter-${TRAVIS_TAG}-${TARGET}.zip" -r "k-iter-${TRAVIS_TAG}-${TARGET}"
