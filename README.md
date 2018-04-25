@@ -1,5 +1,7 @@
 # k-iter: Kinesis Subscriber for CLI
 
+[![Build Status](https://travis-ci.org/ROki1988/k-iter.svg?branch=master)](https://travis-ci.org/ROki1988/k-iter) [![Build status](https://ci.appveyor.com/api/projects/status/omrdwsvjciq68xf9?svg=true)](https://ci.appveyor.com/project/ROki1988/k-iter)
+
 ## Simple Command
 
 ```sh
