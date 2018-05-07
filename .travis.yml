@@ -3,26 +3,19 @@ dist: trusty
 
 cache: cargo
 matrix:
-  # allow_failures:
-  #   - rust: nightly
   include:
-    # Stable channel.
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
     - os: linux
       rust: stable
       env: TARGET=x86_64-unknown-linux-gnu
     - os: linux
       rust: stable
-      env: TARGET=x86_64-unknown-linux-musl
-    - os: linux
-      rust: stable
       env: TARGET=i686-unknown-linux-gnu
     - os: linux
       rust: stable
-      env: TARGET=i686-unknown-linux-musl
-    - os: osx
-      rust: stable
-      env: TARGET=x86_64-apple-darwin
-
+      env: TARGET=aarch64-unknown-linux-gnu
 
 before_script:
   - rustc -V
@@ -56,3 +49,25 @@ before_deploy:
   - mkdir "k-iter-${TRAVIS_TAG}-${TARGET}"
   - cp target/$TARGET/release/k-iter LICENSE README.md "k-iter-${TRAVIS_TAG}-${TARGET}"
   - zip "k-iter-${TRAVIS_TAG}-${TARGET}.zip" -r "k-iter-${TRAVIS_TAG}-${TARGET}"
+
+deploy:
+  provider: releases
+  api_key:
+    secure: Ti3N+4h3c9QpUM2F/EKEpJQbtGzn6rWjnCbdzAq82mBnGXee6sD5y7Ew7LsnsCe0edpqo5Zr7bxtlvs/GEERyul8IR54SWcXJYtd+J8ov6+Xyee4TV9zR3wpxm/24IEiz9mkxkKobe35z/vn8Wv5R81sruXQBwO8J3L/Jor4L9BuFoYqvQnudjNFzaq/mkOVsdzDc9JaDdFHS8GKQysVMu7NrKOTaLzcxyXBaQFSFCj0/i42lusnMassoGYxU2uRos9DrwpFRi6dVOpLq/0EAZt2+NhTUZHtbIX6vlrFNZ9LEWF2VexGSamt3ATom+CvA7uD4mG2Yw7N3VSksG7CpQqZ73rs7qz9pWyfSfWHC0Tgzk/ShV1B1wMbycjc0/Mfhcal8G4HbrbpI4/Kc/8t2adDiA6y5F0fRvg8QGpc3F1Yvx97OorqGtDjI8aSH22gFap63WWeiQ2c6mUP2GEffJdBJudl+1Mr96/dtdJx1AuMoZ5RkiQgLcXumE88pwrCMuxtHjQSBoYvCXBxz63GVMF1NBy851MZZDzs/gGvfg1wg/99sZTIbvQh8diIpvj2YtOndSksofxA7oCTHf7e4nYb1RCpk/OwOdx6Y/0PJgZA8u6GphAjyA0AQ0DzwAzdRbVsigEr/xzD9t58MUiOzcBpwopRZ4igsOy7aItdGlI=
+  file: k-iter-${TRAVIS_TAG}-${TARGET}.zip
+  skip_cleanup: true
+  on:
+    repo: ROki1988/k-iter
+    # On specific condition -> condition: $TRAVIS_RUST_VERSION = nightly
+    #
+    # Only deploy tagged commit
+    tags: true
+
+addons:
+  apt:
+    packages:
+      - gcc-4.8-multilib
+      - gcc-4.8-aarch64-linux-gnu
+      - gcc-aarch64-linux-gnu
+      - libc6-arm64-cross
+      - libc6-dev-arm64-cross
