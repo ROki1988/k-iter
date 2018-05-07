@@ -71,4 +71,5 @@ addons:
       - gcc-aarch64-linux-gnu
       - libc6-arm64-cross
       - libc6-dev-arm64-cross
+      - openssl-1.0.1f
       - libssl-dev
