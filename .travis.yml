@@ -20,8 +20,6 @@ matrix:
       env: TARGET=aarch64-unknown-linux-gnu
 
 before_script:
-  - echo $OPENSSL_DIR
-  - openssl version
   - rustc -V
   - cargo -V
   - cargo install cross
@@ -31,7 +29,7 @@ before_script:
   - git rev-parse HEAD
 
 script:
-  - cargo build --target $TARGET
+  - cross build --target $TARGET
   - RUST_TEST_TASKS=1 cargo test --verbose -- --test-threads 1
 
 notifications:
@@ -40,7 +38,7 @@ notifications:
     on_failure: change
 
 before_deploy:
-  - cargo build --target $TARGET --release
+  - cross build --target $TARGET --release
   - mkdir "k-iter-${TRAVIS_TAG}-${TARGET}"
   - cp target/$TARGET/release/k-iter LICENSE README.md "k-iter-${TRAVIS_TAG}-${TARGET}"
   - zip "k-iter-${TRAVIS_TAG}-${TARGET}.zip" -r "k-iter-${TRAVIS_TAG}-${TARGET}"
@@ -57,14 +55,3 @@ deploy:
     #
     # Only deploy tagged commit
     tags: true
-
-addons:
-  apt:
-    packages:
-      - gcc-4.8-multilib
-      - gcc-4.8-aarch64-linux-gnu
-      - gcc-aarch64-linux-gnu
-      - libc6-arm64-cross
-      - libc6-dev-arm64-cross
-      - openssl
-      - libssl-dev
