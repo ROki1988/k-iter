@@ -22,7 +22,7 @@ matrix:
 before_script:
   - rustc -V
   - cargo -V
-  - cargo install cross
+  - cargo install --force cross
   - git --version
   - echo $TRAVIS_BRANCH
   - git checkout $TRAVIS_BRANCH
