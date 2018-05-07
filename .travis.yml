@@ -22,7 +22,12 @@ before_script:
   - openssl version
   - rustc -V
   - cargo -V
-  - if [[ "${TARGET}" == "i686-unknown-linux-gnu" ]]; then rustup target add $TARGET; fi
+  - |
+    if [[ "${TARGET}" == "i686-unknown-linux-gnu" ]]; then
+        rustup target add $TARGET
+        export OPENSSL_LIB_DIR=$(dpkg -L libssl-dev | grep libssl.a | sed -e 's/libssl.a//g')
+        export OPENSSL_INCLUDE_DIR=$(dpkg -L libssl-dev | grep "x509.h$" | sed -e 's/x509.h//g')
+    fi
   - |
     if [[ "${TARGET}" == "aarch64-unknown-linux-gnu" ]]; then
         rustup target add $TARGET
@@ -31,6 +36,8 @@ before_script:
         echo "[target.${TARGET}]" > .cargo/config
         echo "linker = \"aarch64-linux-gnu-gcc\"" >> .cargo/config
         cat .cargo/config
+        export OPENSSL_LIB_DIR=$(dpkg -L libssl-dev | grep libssl.a | sed -e 's/libssl.a//g')
+        export OPENSSL_INCLUDE_DIR=$(dpkg -L libssl-dev | grep "x509.h$" | sed -e 's/x509.h//g')
     fi
   - git --version
   - echo $TRAVIS_BRANCH
