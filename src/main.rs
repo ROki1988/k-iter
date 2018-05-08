@@ -23,12 +23,12 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
-    pub fn new(stream_name: String, shard_id: String, region: Region) -> Self {
+    pub fn new(stream_name: String, shard_id: String, shard_iterator_type: String, region: Region) -> Self {
         let c = KinesisClient::simple(region);
-        let input = GetShardIteratorInput{
-            shard_id: shard_id,
-            shard_iterator_type:"LATEST".to_owned(),
-            stream_name: stream_name,
+        let input = GetShardIteratorInput {
+            shard_id,
+            shard_iterator_type,
+            stream_name,
             ..Default::default()
         };
         KinesisIterator {
@@ -71,9 +71,6 @@ arg_enum! {
     #[derive(Debug)]
     enum IteratorType {
         LATEST,
-        AT_SEQUENCE_NUMBER,
-        AFTER_SEQUENCE_NUMBER,
-        AT_TIMESTAMP,
         TRIM_HORIZON
     }
 }
@@ -131,7 +128,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .default_value("shardId-000000000000")
                 .takes_value(true)
         )
-/*        .arg(
+        .arg(
             Arg::with_name("iterator-type")
                 .short("t")
                 .long("iterator-type")
@@ -139,7 +136,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .default_value("LATEST")
                 .value_name("TYPE")
                 .help("Sets iterator type.")
-        )*/
+        )
 }
 
 fn main() {
@@ -153,8 +150,9 @@ fn main() {
     let name = value_t_or_exit!(matches.value_of("stream-name"), String);
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
     let region = value_t_or_exit!(matches.value_of("region"), Region);
-    let mut it = KinesisIterator::new(name, id, region);
+    let iter_type = value_t_or_exit!(matches.value_of("iterator-type"), String);
 
+    let mut it = KinesisIterator::new(name, id, iter_type, region);
 
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
