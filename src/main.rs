@@ -6,16 +6,14 @@ extern crate rusoto_kinesis;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::process::{Command, Stdio};
-use std::io::Write;
 use std::thread;
 use std::time;
 
 use clap::{App, Arg};
 
 use rusoto_core::Region;
-use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
-                     GetShardIteratorInput, Kinesis, KinesisClient, Record};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetShardIteratorError,
+                     GetShardIteratorInput, Kinesis, KinesisClient};
 
 pub struct KinesisIterator {
     client: KinesisClient,
