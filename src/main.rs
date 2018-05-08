@@ -14,7 +14,8 @@ use std::time;
 use clap::{App, Arg};
 
 use rusoto_core::Region;
-use rusoto_kinesis::{Kinesis, KinesisClient, GetShardIteratorInput, GetRecordsInput, GetRecordsOutput, GetRecordsError, GetShardIteratorError, Record};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
+                     GetShardIteratorInput, Kinesis, KinesisClient, Record};
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -23,7 +24,12 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
-    pub fn new(stream_name: String, shard_id: String, shard_iterator_type: String, region: Region) -> Self {
+    pub fn new(
+        stream_name: String,
+        shard_id: String,
+        shard_iterator_type: String,
+        region: Region,
+    ) -> Self {
         let c = KinesisClient::simple(region);
         let input = GetShardIteratorInput {
             shard_id,
@@ -40,7 +46,8 @@ impl KinesisIterator {
 
     pub fn get_iterator_token(&self) -> Result<Option<String>, GetShardIteratorError> {
         self.client
-            .get_shard_iterator(&self.input).sync()
+            .get_shard_iterator(&self.input)
+            .sync()
             .map(|x| x.shard_iterator)
     }
 }
@@ -49,7 +56,8 @@ impl Iterator for KinesisIterator {
     type Item = Result<Vec<Vec<u8>>, GetRecordsError>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.token.clone()
+        self.token
+            .clone()
             .or_else(|| self.get_iterator_token().unwrap())
             .map(|x| {
                 self.token = Some(x.clone());
@@ -57,13 +65,11 @@ impl Iterator for KinesisIterator {
                     shard_iterator: x,
                     ..Default::default()
                 };
-                self.client.get_records(&r).sync()
-                    .map(|x| {
-                        self.token = x.next_shard_iterator.clone();
-                        x.records.into_iter().map(|r| r.data).collect()
-                    })
+                self.client.get_records(&r).sync().map(|x| {
+                    self.token = x.next_shard_iterator.clone();
+                    x.records.into_iter().map(|r| r.data).collect()
+                })
             })
-
     }
 }
 
@@ -95,7 +101,9 @@ fn build_app() -> clap::App<'static, 'static> {
         Region::UsGovWest1,
         Region::CnNorth1,
         Region::CnNorthwest1,
-    ].iter().map(|x| x.name()).collect::<Vec<&str>>();
+    ].iter()
+        .map(|x| x.name())
+        .collect::<Vec<&str>>();
     App::new("k-iter")
         .about("AWS Kinesis Stream Subscriber")
         .version(crate_version!())
@@ -107,7 +115,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .required(true)
                 .value_name("NAME")
                 .help("Sets a stream name.")
-                .takes_value(true)
+                .takes_value(true),
         )
         .arg(
             Arg::with_name("region")
@@ -117,7 +125,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .possible_values(&region)
                 .value_name("NAME")
                 .help("Sets a region name.")
-                .takes_value(true)
+                .takes_value(true),
         )
         .arg(
             Arg::with_name("shard-id")
@@ -126,7 +134,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .value_name("ID")
                 .help("Sets shard id")
                 .default_value("shardId-000000000000")
-                .takes_value(true)
+                .takes_value(true),
         )
         .arg(
             Arg::with_name("iterator-type")
@@ -135,7 +143,7 @@ fn build_app() -> clap::App<'static, 'static> {
                 .possible_values(&IteratorType::variants())
                 .default_value("LATEST")
                 .value_name("TYPE")
-                .help("Sets iterator type.")
+                .help("Sets iterator type."),
         )
 }
 
