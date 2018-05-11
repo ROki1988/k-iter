@@ -1,6 +1,7 @@
 # k-iter: Kinesis Subscriber for CLI
 
 [![Build Status](https://travis-ci.org/ROki1988/k-iter.svg?branch=master)](https://travis-ci.org/ROki1988/k-iter) [![Build status](https://ci.appveyor.com/api/projects/status/omrdwsvjciq68xf9?svg=true)](https://ci.appveyor.com/project/ROki1988/k-iter)[![dependency status](https://deps.rs/repo/github/ROki1988/k-iter/status.svg)](https://deps.rs/repo/github/ROki1988/k-iter)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FROki1988%2Fk-iter.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FROki1988%2Fk-iter?ref=badge_shield)
 
 ## Simple Command
 
@@ -31,3 +32,6 @@ OPTIONS:
 ```
 cargo install --git https://github.com/ROki1988/k-iter.git
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FROki1988%2Fk-iter.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FROki1988%2Fk-iter?ref=badge_large)
