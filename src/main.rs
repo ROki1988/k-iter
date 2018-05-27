@@ -75,6 +75,9 @@ arg_enum! {
     #[derive(Debug)]
     enum IteratorType {
         LATEST,
+        AT_SEQUENCE_NUMBER,
+        AFTER_SEQUENCE_NUMBER,
+        AT_TIMESTAMP,
         TRIM_HORIZON
     }
 }
@@ -139,9 +142,28 @@ fn build_app() -> clap::App<'static, 'static> {
                 .short("t")
                 .long("iterator-type")
                 .possible_values(&IteratorType::variants())
+                .requires_ifs(&[
+                    ("AT_SEQUENCE_NUMBER", "sequence-number"),
+                    ("AFTER_SEQUENCE_NUMBER", "sequence-number"),
+                    ("AT_TIMESTAMP", "timestamp"),
+                ])
                 .default_value("LATEST")
                 .value_name("TYPE")
                 .help("Sets iterator type."),
+        )
+        .arg(
+            Arg::with_name("sequence-number")
+                .long("sequence-number")
+                .value_name("NUM")
+                .help("Set Sequence number when Iterator Type is AT_SEQUENCE_NUMBER or AFTER_SEQUENCE_NUMBER.")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("timestamp")
+                .long("timestamp")
+                .value_name("TIMESTAMP")
+                .help("Set timestamp(UNIX Epoch milliseconds) when Iterator Type is AT_TIMESTAMP.")
+                .takes_value(true),
         )
 }
 
