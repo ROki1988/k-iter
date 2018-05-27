@@ -22,24 +22,62 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
-    pub fn new(
-        stream_name: String,
-        shard_id: String,
-        shard_iterator_type: String,
-        region: Region,
-    ) -> Self {
+    fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
         let c = KinesisClient::simple(region);
-        let input = GetShardIteratorInput {
-            shard_id,
-            shard_iterator_type,
-            stream_name,
-            ..Default::default()
-        };
         KinesisIterator {
             client: c,
             input,
             token: None,
         }
+    }
+
+    pub fn new(
+        stream_name: String,
+        shard_id: String,
+        shard_iterator_type: IteratorType,
+        region: Region,
+    ) -> Self {
+        let input = GetShardIteratorInput {
+            shard_id,
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name,
+            ..Default::default()
+        };
+        KinesisIterator::new_self(input, region)
+    }
+
+    pub fn new_with_sequence_number(
+        stream_name: String,
+        shard_id: String,
+        shard_iterator_type: IteratorType,
+        sequence_number: String,
+        region: Region,
+    ) -> Self {
+        let input = GetShardIteratorInput {
+            shard_id,
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name,
+            starting_sequence_number: Some(sequence_number),
+            ..Default::default()
+        };
+        KinesisIterator::new_self(input, region)
+    }
+
+    pub fn new_with_timestamp(
+        stream_name: String,
+        shard_id: String,
+        shard_iterator_type: IteratorType,
+        timestamp: f64,
+        region: Region,
+    ) -> Self {
+        let input = GetShardIteratorInput {
+            shard_id,
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name,
+            timestamp: Some(timestamp),
+            ..Default::default()
+        };
+        KinesisIterator::new_self(input, region)
     }
 
     pub fn get_iterator_token(&self) -> Result<Option<String>, GetShardIteratorError> {
@@ -72,8 +110,8 @@ impl Iterator for KinesisIterator {
 }
 
 arg_enum! {
-    #[derive(Debug)]
-    enum IteratorType {
+    #[derive(PartialEq, Debug)]
+    pub enum IteratorType {
         LATEST,
         AT_SEQUENCE_NUMBER,
         AFTER_SEQUENCE_NUMBER,
@@ -178,9 +216,19 @@ fn main() {
     let name = value_t_or_exit!(matches.value_of("stream-name"), String);
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
     let region = value_t_or_exit!(matches.value_of("region"), Region);
-    let iter_type = value_t_or_exit!(matches.value_of("iterator-type"), String);
+    let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
 
-    let mut it = KinesisIterator::new(name, id, iter_type, region);
+    let mut it = match iter_type {
+        IteratorType::LATEST | IteratorType::TRIM_HORIZON => KinesisIterator::new(name, id, iter_type, region),
+        IteratorType::AT_SEQUENCE_NUMBER | IteratorType::AFTER_SEQUENCE_NUMBER => {
+            let seq = value_t_or_exit!(matches.value_of("sequence-number"), String);
+            KinesisIterator::new_with_sequence_number(name, id, iter_type, seq, region)
+        },
+        IteratorType::AT_TIMESTAMP => {
+            let timestamp = value_t_or_exit!(matches.value_of("timestamp"), f64);
+            KinesisIterator::new_with_timestamp(name, id, iter_type, timestamp, region)
+        },
+    };
 
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
