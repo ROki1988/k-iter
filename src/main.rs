@@ -13,7 +13,7 @@ use clap::{App, Arg};
 
 use rusoto_core::Region;
 use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetShardIteratorError,
-                     GetShardIteratorInput, Kinesis, KinesisClient};
+                     GetShardIteratorInput, Kinesis, KinesisClient, Record};
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -89,7 +89,7 @@ impl KinesisIterator {
 }
 
 impl Iterator for KinesisIterator {
-    type Item = Result<Vec<Vec<u8>>, GetRecordsError>;
+    type Item = Result<Vec<Record>, GetRecordsError>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         self.token
@@ -103,7 +103,7 @@ impl Iterator for KinesisIterator {
                 };
                 self.client.get_records(&r).sync().map(|x| {
                     self.token = x.next_shard_iterator.clone();
-                    x.records.into_iter().map(|r| r.data).collect()
+                    x.records
                 })
             })
     }
@@ -234,7 +234,7 @@ fn main() {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
             n.iter()
-                .for_each(|x| println!("{}", String::from_utf8_lossy(x)));
+                .for_each(|x| println!("{}", String::from_utf8_lossy(&x.data)));
         }
     }
 }
