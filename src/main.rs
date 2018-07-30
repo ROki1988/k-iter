@@ -12,8 +12,8 @@ use std::time;
 use clap::{App, Arg};
 
 use rusoto_core::Region;
-use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetShardIteratorError,
-                     GetShardIteratorInput, Kinesis, KinesisClient, Record};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
+                     GetShardIteratorInput, Kinesis, KinesisClient};
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -89,7 +89,7 @@ impl KinesisIterator {
 }
 
 impl Iterator for KinesisIterator {
-    type Item = Result<Vec<Record>, GetRecordsError>;
+    type Item = Result<GetRecordsOutput, GetRecordsError>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         self.token
@@ -103,7 +103,7 @@ impl Iterator for KinesisIterator {
                 };
                 self.client.get_records(&r).sync().map(|x| {
                     self.token = x.next_shard_iterator.clone();
-                    x.records
+                    x
                 })
             })
     }
@@ -205,6 +205,13 @@ fn build_app() -> clap::App<'static, 'static> {
         )
 }
 
+fn record_output2string_only_data(data: GetRecordsOutput) -> String {
+    data.records.into_iter()
+        .filter_map(|x| String::from_utf8(x.data).ok())
+        .collect::<Vec<String>>()
+        .connect("\n")
+}
+
 fn main() {
     let matches = build_app().get_matches();
     let running = Arc::new(AtomicBool::new(true));
@@ -233,8 +240,7 @@ fn main() {
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
-            n.iter()
-                .for_each(|x| println!("{}", String::from_utf8_lossy(&x.data)));
+            println!("{}", record_output2string_only_data(n));
         }
     }
 }
