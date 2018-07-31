@@ -270,9 +270,8 @@ fn main() {
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
     let region = value_t_or_exit!(matches.value_of("region"), Region);
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
-    let is_verbose: bool = value_t_or_exit!(matches.value_of("verbose"), bool);
 
-    let printer = if is_verbose { records2string_verbose } else { records2string_only_data};
+    let printer = if matches.is_present("verbose") { records2string_verbose } else { records2string_only_data};
 
     let mut it = match iter_type {
         IteratorType::LATEST | IteratorType::TRIM_HORIZON => KinesisIterator::new(name, id, iter_type, region),
@@ -289,7 +288,7 @@ fn main() {
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
-            println!("{}", printer(&n.records));
+            if !n.records.is_empty() { println!("{}", printer(&n.records)); }
         }
     }
 }
