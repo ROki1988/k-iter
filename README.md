@@ -11,20 +11,27 @@ k-iter -n stream -r ap-northeast-1
 
 ## Options
 
-```sh
+```bash
 USAGE:
-    k-iter [OPTIONS] --region <NAME> --stream-name <NAME>
+    k-iter [FLAGS] [OPTIONS] --region <NAME> --stream-name <NAME>
+
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
+        --verbose    Enable verbose mode.
+
 OPTIONS:
-    -t, --iterator-type <TYPE>    Sets iterator type. [default: LATEST]  [possible values: LATEST, TRIM_HORIZON]
-    -r, --region <NAME>           Sets a region name. [possible values: ap-northeast-1, ap-northeast-2, ap-south-1, ap
-                                  -southeast-1, ap-southeast-2, ca-central-1, eu-central-1, eu-west-1, eu-west-2, eu
-                                  -west-3, sa-east-1, us-east-1, us-east-2, us-west-1, us-west-2, us-gov-west-1, cn
-                                  -north-1, cn-northwest-1]
-    -s, --shard-id <ID>           Sets shard id [default: shardId-000000000000]
-    -n, --stream-name <NAME>      Sets a stream name.
+    -t, --iterator-type <TYPE>     Sets iterator type. [default: LATEST]  [possible values: LATEST, AT_SEQUENCE_NUMBER,
+                                   AFTER_SEQUENCE_NUMBER, AT_TIMESTAMP, TRIM_HORIZON]
+    -r, --region <NAME>            Sets a region name. [possible values: ap-northeast-1, ap-northeast-2, ap-south-1, ap
+                                   -southeast-1, ap-southeast-2, ca-central-1, eu-central-1, eu-west-1, eu-west-2, eu
+                                   -west-3, sa-east-1, us-east-1, us-east-2, us-west-1, us-west-2, us-gov-west-1, cn
+                                   -north-1, cn-northwest-1]
+        --sequence-number <NUM>    Set Sequence number when Iterator Type is AT_SEQUENCE_NUMBER or
+                                   AFTER_SEQUENCE_NUMBER.
+    -s, --shard-id <ID>            Sets shard id [default: shardId-000000000000]
+    -n, --stream-name <NAME>       Sets a stream name.
+        --timestamp <TIMESTAMP>    Set timestamp(UNIX Epoch milliseconds) when Iterator Type is AT_TIMESTAMP.
 ```
 
 ## Install
