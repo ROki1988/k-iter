@@ -288,7 +288,7 @@ fn main() {
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
-            println!("{}", printer(&n.records));
+            if !n.records.is_empty() { println!("{}", printer(&n.records)); }
         }
     }
 }
