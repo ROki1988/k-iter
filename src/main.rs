@@ -3,6 +3,10 @@ extern crate clap;
 extern crate ctrlc;
 extern crate rusoto_core;
 extern crate rusoto_kinesis;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -12,8 +16,36 @@ use std::time;
 use clap::{App, Arg};
 
 use rusoto_core::Region;
-use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetShardIteratorError,
-                     GetShardIteratorInput, Kinesis, KinesisClient, Record};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, Record, GetRecordsOutput, GetShardIteratorError,
+                     GetShardIteratorInput, Kinesis, KinesisClient};
+
+#[derive( Debug, Clone, Serialize)]
+pub struct RecordRef<'a> {
+    #[serde(rename = "ApproximateArrivalTimestamp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approximate_arrival_timestamp: &'a Option<f64>,
+    #[serde(rename = "Data")]
+    pub data: &'a [u8],
+    #[serde(rename = "EncryptionType")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encryption_type: &'a Option<String>,
+    #[serde(rename = "PartitionKey")]
+    pub partition_key: &'a String,
+    #[serde(rename = "SequenceNumber")]
+    pub sequence_number: &'a String,
+}
+
+impl<'a> RecordRef<'a> {
+    fn new(origin: &'a Record) -> Self {
+        RecordRef {
+            approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
+            data: origin.data.as_slice(),
+            encryption_type: &origin.encryption_type,
+            partition_key: &origin.partition_key,
+            sequence_number: &origin.sequence_number,
+        }
+    }
+}
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -89,7 +121,7 @@ impl KinesisIterator {
 }
 
 impl Iterator for KinesisIterator {
-    type Item = Result<Vec<Record>, GetRecordsError>;
+    type Item = Result<GetRecordsOutput, GetRecordsError>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         self.token
@@ -103,7 +135,7 @@ impl Iterator for KinesisIterator {
                 };
                 self.client.get_records(&r).sync().map(|x| {
                     self.token = x.next_shard_iterator.clone();
-                    x.records
+                    x
                 })
             })
     }
@@ -203,6 +235,27 @@ fn build_app() -> clap::App<'static, 'static> {
                 .help("Set timestamp(UNIX Epoch milliseconds) when Iterator Type is AT_TIMESTAMP.")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("verbose")
+                .long("verbose")
+                .help("Enable verbose mode.")
+                .default_value("false")
+                .takes_value(false),
+        )
+}
+
+fn records2string_only_data(records: &Vec<Record>) -> String {
+    records.iter()
+        .map(|x| String::from_utf8_lossy(&x.data).to_string())
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+fn records2string_verbose(records: &Vec<Record>) -> String {
+    records.iter()
+        .filter_map(|x| serde_json::to_string(&RecordRef::new(x)).ok())
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 fn main() {
@@ -217,6 +270,9 @@ fn main() {
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
     let region = value_t_or_exit!(matches.value_of("region"), Region);
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
+    let is_verbose: bool = value_t_or_exit!(matches.value_of("verbose"), bool);
+
+    let printer = if is_verbose { records2string_verbose } else { records2string_only_data};
 
     let mut it = match iter_type {
         IteratorType::LATEST | IteratorType::TRIM_HORIZON => KinesisIterator::new(name, id, iter_type, region),
@@ -233,8 +289,7 @@ fn main() {
     while running.load(Ordering::SeqCst) {
         if let Some(Ok(n)) = it.next() {
             thread::sleep(time::Duration::from_millis(1000));
-            n.iter()
-                .for_each(|x| println!("{}", String::from_utf8_lossy(&x.data)));
+            println!("{}", printer(&n.records));
         }
     }
 }
