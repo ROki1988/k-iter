@@ -22,12 +22,12 @@ use rusoto_core::Region;
 use rusoto_kinesis::Record;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct RecordRef<'a> {
+pub struct RecordRef<'a, Data> {
     #[serde(rename = "ApproximateArrivalTimestamp")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approximate_arrival_timestamp: &'a Option<f64>,
     #[serde(rename = "Data")]
-    pub data: &'a [u8],
+    pub data: Data,
     #[serde(rename = "EncryptionType")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption_type: &'a Option<String>,
@@ -37,8 +37,8 @@ pub struct RecordRef<'a> {
     pub sequence_number: &'a String,
 }
 
-impl<'a> RecordRef<'a> {
-    fn new(origin: &'a Record) -> Self {
+impl<'a, Data> RecordRef<'a, Data> {
+    fn new_raw_array(origin: &'a Record) -> RecordRef<&[u8]> {
         RecordRef {
             approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
             data: origin.data.as_slice(),
@@ -60,7 +60,7 @@ fn records2string_only_data(records: &Vec<Record>) -> String {
 fn records2string_verbose(records: &Vec<Record>) -> String {
     records
         .iter()
-        .filter_map(|x| serde_json::to_string(&RecordRef::new(x)).ok())
+        .filter_map(|x| serde_json::to_string(&RecordRef::<&[u8]>::new_raw_array(x)).ok())
         .collect::<Vec<String>>()
         .join("\n")
 }
