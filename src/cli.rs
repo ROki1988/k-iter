@@ -1,4 +1,4 @@
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg};
 use rusoto_core::Region;
 
 arg_enum! {
@@ -8,7 +8,16 @@ arg_enum! {
         AT_SEQUENCE_NUMBER,
         AFTER_SEQUENCE_NUMBER,
         AT_TIMESTAMP,
-        TRIM_HORIZON
+        TRIM_HORIZON,
+    }
+}
+
+arg_enum! {
+    #[derive(PartialEq, Debug)]
+    pub enum DataFormat {
+        RAW_BYTES,
+        RAW_STRING,
+        UTF8_STRING,
     }
 }
 
@@ -63,7 +72,7 @@ pub fn build_app() -> App<'static, 'static> {
                 .short("s")
                 .long("shard-id")
                 .value_name("ID")
-                .help("Sets shard id")
+                .help("Set shard id.")
                 .default_value("shardId-000000000000")
                 .takes_value(true),
         )
@@ -101,5 +110,13 @@ pub fn build_app() -> App<'static, 'static> {
                 .help("Enable verbose mode.")
                 .default_value("false")
                 .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("data-format")
+                .long("data-format")
+                .value_name("TYPE")
+                .help("Set data output-format.")
+                .default_value("UTF8_STRING")
+                .takes_value(true),
         )
 }
