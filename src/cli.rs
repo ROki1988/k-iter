@@ -114,6 +114,7 @@ pub fn build_app() -> App<'static, 'static> {
         .arg(
             Arg::with_name("data-format")
                 .long("data-format")
+                .possible_values(&DataFormat::variants())
                 .value_name("TYPE")
                 .help("Set data output-format.")
                 .default_value("UTF8_STRING")
