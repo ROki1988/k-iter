@@ -125,6 +125,7 @@ build: false
 test_script:
   - cargo build --verbose
   - cargo run -- --help
+  - RUST_TEST_TASKS=1 cargo test --verbose -- --test-threads 1
 
 before_deploy:
   # Generate artifacts for release
