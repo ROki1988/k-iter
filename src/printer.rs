@@ -82,7 +82,7 @@ impl RecordsPrinter {
 fn records2string_only_data_raw_byte(records: &[Record]) -> String {
     records
         .iter()
-        .map(|x| format!("{:?}",  x.data.as_slice()))
+        .map(|x| format!("{:?}", x.data.as_slice()))
         .collect::<Vec<String>>()
         .join("\n")
 }
@@ -131,9 +131,10 @@ fn records2string_verbose_utf8_string(records: &[Record]) -> String {
 mod tests {
     use rusoto_kinesis::Record;
     use super::*;
+
     #[test]
     fn test_only_data_utf8_string() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: "test-data".to_owned().into_bytes(),
             encryption_type: None,
@@ -141,12 +142,15 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!("test-data".to_owned(), records2string_only_data_utf8_string(records.as_slice()))
+        assert_eq!(
+            "test-data".to_owned(),
+            records2string_only_data_utf8_string(records.as_slice())
+        )
     }
 
     #[test]
     fn test_only_data_raw_byte() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: vec![0u8, 255u8],
             encryption_type: None,
@@ -154,12 +158,15 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!("[0, 255]".to_owned(), records2string_only_data_raw_byte(records.as_slice()))
+        assert_eq!(
+            "[0, 255]".to_owned(),
+            records2string_only_data_raw_byte(records.as_slice())
+        )
     }
 
     #[test]
     fn test_only_data_raw_string() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: vec![0u8, 255u8],
             encryption_type: None,
@@ -167,12 +174,15 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!("00ff".to_owned(), records2string_only_data_raw_string(records.as_slice()))
+        assert_eq!(
+            "00ff".to_owned(),
+            records2string_only_data_raw_string(records.as_slice())
+        )
     }
 
     #[test]
     fn test_verbose_utf8_string() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: "test-data".to_owned().into_bytes(),
             encryption_type: None,
@@ -180,12 +190,15 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!(r#"{"Data":"test-data","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(), records2string_verbose_utf8_string(records.as_slice()))
+        assert_eq!(
+            r#"{"Data":"test-data","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),
+            records2string_verbose_utf8_string(records.as_slice())
+        )
     }
 
     #[test]
     fn test_verbose_raw_byte() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: vec![0u8, 255u8],
             encryption_type: None,
@@ -193,12 +206,15 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!(r#"{"Data":[0,255],"PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(), records2string_verbose_raw_byte(records.as_slice()))
+        assert_eq!(
+            r#"{"Data":[0,255],"PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),
+            records2string_verbose_raw_byte(records.as_slice())
+        )
     }
 
     #[test]
     fn test_verbose_raw_string() {
-        let records: Vec<Record> = vec![Record{
+        let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
             data: vec![0u8, 255u8],
             encryption_type: None,
@@ -206,6 +222,9 @@ mod tests {
             sequence_number: "1".to_owned(),
         }];
 
-        assert_eq!(r#"{"Data":"00ff","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(), records2string_verbose_raw_string(records.as_slice()))
+        assert_eq!(
+            r#"{"Data":"00ff","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),
+            records2string_verbose_raw_string(records.as_slice())
+        )
     }
 }
