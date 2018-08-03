@@ -11,8 +11,8 @@ extern crate serde_json;
 use cli::{DataFormat, IteratorType};
 use kinesis::KinesisIterator;
 use rusoto_core::Region;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time;
 
