@@ -1,6 +1,6 @@
 [package]
 name = "k-iter"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["ROki1988 <roki.swindler@gmail.com>"]
 
 [dependencies]

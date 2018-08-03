@@ -13,7 +13,7 @@ k-iter -n stream -r ap-northeast-1
 
 ```bash
 USAGE:
-    k-iter [FLAGS] [OPTIONS] --region <NAME> --stream-name <NAME>
+    k-iter.exe [FLAGS] [OPTIONS] --region <NAME> --stream-name <NAME>
 
 FLAGS:
     -h, --help       Prints help information
@@ -21,6 +21,8 @@ FLAGS:
         --verbose    Enable verbose mode.
 
 OPTIONS:
+        --data-format <TYPE>       Set data output-format. [default: UTF8_STRING]  [possible values: RAW_BYTES,
+                                   RAW_STRING, UTF8_STRING]
     -t, --iterator-type <TYPE>     Sets iterator type. [default: LATEST]  [possible values: LATEST, AT_SEQUENCE_NUMBER,
                                    AFTER_SEQUENCE_NUMBER, AT_TIMESTAMP, TRIM_HORIZON]
     -r, --region <NAME>            Sets a region name. [possible values: ap-northeast-1, ap-northeast-2, ap-south-1, ap
@@ -29,7 +31,7 @@ OPTIONS:
                                    -north-1, cn-northwest-1]
         --sequence-number <NUM>    Set Sequence number when Iterator Type is AT_SEQUENCE_NUMBER or
                                    AFTER_SEQUENCE_NUMBER.
-    -s, --shard-id <ID>            Sets shard id [default: shardId-000000000000]
+    -s, --shard-id <ID>            Set shard id. [default: shardId-000000000000]
     -n, --stream-name <NAME>       Sets a stream name.
         --timestamp <TIMESTAMP>    Set timestamp(UNIX Epoch milliseconds) when Iterator Type is AT_TIMESTAMP.
 ```
