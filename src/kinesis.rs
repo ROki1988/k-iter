@@ -1,7 +1,7 @@
 use rusoto_core::Region;
 use rusoto_kinesis::{
     GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
-    GetShardIteratorInput, Kinesis, KinesisClient, Record,
+    GetShardIteratorInput, Kinesis, KinesisClient,
 };
 
 pub struct KinesisIterator {
