@@ -12,7 +12,7 @@ pub struct KinesisIterator {
 
 impl KinesisIterator {
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
-        let c = KinesisClient::simple(region);
+        let c = KinesisClient::new(region);
         KinesisIterator {
             client: c,
             input,
@@ -71,7 +71,7 @@ impl KinesisIterator {
 
     pub fn get_iterator_token(&self) -> Result<Option<String>, GetShardIteratorError> {
         self.client
-            .get_shard_iterator(&self.input)
+            .get_shard_iterator(self.input.clone())
             .sync()
             .map(|x| x.shard_iterator)
     }
@@ -90,7 +90,7 @@ impl Iterator for KinesisIterator {
                     shard_iterator: x,
                     ..Default::default()
                 };
-                self.client.get_records(&r).sync().map(|x| {
+                self.client.get_records(r).sync().map(|x| {
                     self.token = x.next_shard_iterator.clone();
                     x
                 })
