@@ -156,3 +156,7 @@ deploy:
     # channel to use to produce the release artifacts
     CHANNEL: stable
     appveyor_repo_tag: true
+
+branches:
+  only:
+  - master
