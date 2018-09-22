@@ -4,16 +4,16 @@ use rusoto_kinesis::{
     GetShardIteratorInput, Kinesis, KinesisClient,
 };
 
-pub struct KinesisIterator {
+pub struct KinesisShardIterator {
     client: KinesisClient,
     input: GetShardIteratorInput,
     token: Option<String>,
 }
 
-impl KinesisIterator {
+impl KinesisShardIterator {
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
         let c = KinesisClient::new(region);
-        KinesisIterator {
+        Self {
             client: c,
             input,
             token: None,
@@ -32,7 +32,7 @@ impl KinesisIterator {
             stream_name,
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisShardIterator::new_self(input, region)
     }
 
     pub fn new_with_sequence_number(
@@ -49,7 +49,7 @@ impl KinesisIterator {
             starting_sequence_number: Some(sequence_number),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisShardIterator::new_self(input, region)
     }
 
     pub fn new_with_timestamp(
@@ -66,7 +66,7 @@ impl KinesisIterator {
             timestamp: Some(timestamp),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisShardIterator::new_self(input, region)
     }
 
     pub fn get_iterator_token(&self) -> Result<Option<String>, GetShardIteratorError> {
@@ -77,7 +77,7 @@ impl KinesisIterator {
     }
 }
 
-impl Iterator for KinesisIterator {
+impl Iterator for KinesisShardIterator {
     type Item = Result<GetRecordsOutput, GetRecordsError>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {

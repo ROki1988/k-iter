@@ -9,7 +9,7 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use cli::{DataFormat, IteratorType};
-use kinesis::KinesisIterator;
+use kinesis::KinesisShardIterator;
 use rusoto_core::Region;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -38,15 +38,27 @@ fn main() {
 
     let mut it = match iter_type {
         IteratorType::LATEST | IteratorType::TRIM_HORIZON => {
-            KinesisIterator::new(name, id, iter_type.to_string(), region)
+            KinesisShardIterator::new(name, id, iter_type.to_string(), region)
         }
         IteratorType::AT_SEQUENCE_NUMBER | IteratorType::AFTER_SEQUENCE_NUMBER => {
             let seq = value_t_or_exit!(matches.value_of("sequence-number"), String);
-            KinesisIterator::new_with_sequence_number(name, id, iter_type.to_string(), seq, region)
+            KinesisShardIterator::new_with_sequence_number(
+                name,
+                id,
+                iter_type.to_string(),
+                seq,
+                region,
+            )
         }
         IteratorType::AT_TIMESTAMP => {
             let timestamp = value_t_or_exit!(matches.value_of("timestamp"), f64);
-            KinesisIterator::new_with_timestamp(name, id, iter_type.to_string(), timestamp, region)
+            KinesisShardIterator::new_with_timestamp(
+                name,
+                id,
+                iter_type.to_string(),
+                timestamp,
+                region,
+            )
         }
     };
 
@@ -59,4 +71,3 @@ fn main() {
         }
     }
 }
-
