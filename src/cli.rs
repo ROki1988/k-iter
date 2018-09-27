@@ -63,6 +63,7 @@ pub fn build_app() -> App<'static, 'static> {
                 .long("region")
                 .required(true)
                 .possible_values(&region)
+                .possible_value("local_stack")
                 .value_name("NAME")
                 .help("Sets a region name.")
                 .takes_value(true),

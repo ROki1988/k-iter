@@ -30,7 +30,10 @@ fn main() {
 
     let name = value_t_or_exit!(matches.value_of("stream-name"), String);
     let id = value_t_or_exit!(matches.value_of("shard-id"), String);
-    let region = value_t_or_exit!(matches.value_of("region"), Region);
+    let region = match value_t_or_exit!(matches.value_of("region"), String).as_str() {
+        "local_stack" => Region::Custom {name: "local_stack".to_owned(), endpoint: "http://localhost:4568".to_owned(),},
+        r => Region::from_str(r).unwrap(),
+    };
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
     let format_type: DataFormat = value_t_or_exit!(matches.value_of("data-format"), DataFormat);
 
