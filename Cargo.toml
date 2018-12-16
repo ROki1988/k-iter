@@ -2,6 +2,7 @@
 name = "k-iter"
 version = "0.3.0"
 authors = ["ROki1988 <roki.swindler@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 clap = "2.31.2"
