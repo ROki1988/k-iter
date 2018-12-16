@@ -1,20 +1,15 @@
-#[macro_use]
-extern crate clap;
-extern crate ctrlc;
-extern crate rusoto_core;
-extern crate rusoto_kinesis;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
-use cli::{DataFormat, IteratorType};
-use kinesis::KinesisIterator;
-use rusoto_core::Region;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time;
+
+use clap::value_t_or_exit;
+use ctrlc;
+use rusoto_core::Region;
+use serde_json;
+
+use crate::cli::{DataFormat, IteratorType};
+use crate::kinesis::KinesisIterator;
 
 mod cli;
 mod kinesis;
@@ -59,4 +54,3 @@ fn main() {
         }
     }
 }
-

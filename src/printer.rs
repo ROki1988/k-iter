@@ -1,7 +1,10 @@
-use cli::DataFormat;
-use rusoto_kinesis::Record;
-use serde_json;
 use std;
+
+use rusoto_kinesis::Record;
+use serde_derive::Serialize;
+use serde_json;
+
+use crate::cli::DataFormat;
 
 #[derive(Debug, Clone, Serialize)]
 struct RecordRef<'a, Data> {
@@ -20,7 +23,7 @@ struct RecordRef<'a, Data> {
 }
 
 impl<'a, Data> RecordRef<'a, Data> {
-    fn new_raw_array(origin: &'a Record) -> RecordRef<&[u8]> {
+    fn new_raw_array(origin: &'a Record) -> RecordRef<'_, &[u8]> {
         RecordRef {
             approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
             data: origin.data.as_slice(),
@@ -30,7 +33,7 @@ impl<'a, Data> RecordRef<'a, Data> {
         }
     }
 
-    fn new_raw_string(origin: &'a Record) -> RecordRef<String> {
+    fn new_raw_string(origin: &'a Record) -> RecordRef<'_, String> {
         RecordRef {
             approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
             data: origin.data.iter().map(|&s| format!("{:02x}", s)).collect(),
@@ -40,7 +43,7 @@ impl<'a, Data> RecordRef<'a, Data> {
         }
     }
 
-    fn new_utf8_string(origin: &'a Record) -> RecordRef<&str> {
+    fn new_utf8_string(origin: &'a Record) -> RecordRef<'_, &str> {
         RecordRef {
             approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
             data: std::str::from_utf8(&origin.data).unwrap(),
@@ -129,8 +132,9 @@ fn records2string_verbose_utf8_string(records: &[Record]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rusoto_kinesis::Record;
+
+    use super::*;
 
     #[test]
     fn test_only_data_utf8_string() {
