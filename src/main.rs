@@ -6,7 +6,6 @@ use std::time;
 use clap::value_t_or_exit;
 use ctrlc;
 use rusoto_core::Region;
-use serde_json;
 
 use crate::cli::{DataFormat, IteratorType};
 use crate::kinesis::KinesisIterator;
