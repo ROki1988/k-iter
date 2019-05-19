@@ -1,4 +1,5 @@
 use rusoto_core::Region;
+use rusoto_core::RusotoError;
 use rusoto_kinesis::{
     GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
     GetShardIteratorInput, Kinesis, KinesisClient,
@@ -69,7 +70,7 @@ impl KinesisIterator {
         KinesisIterator::new_self(input, region)
     }
 
-    pub fn get_iterator_token(&self) -> Result<Option<String>, GetShardIteratorError> {
+    pub fn get_iterator_token(&self) -> Result<Option<String>, RusotoError<GetShardIteratorError>> {
         self.client
             .get_shard_iterator(self.input.clone())
             .sync()
@@ -78,7 +79,7 @@ impl KinesisIterator {
 }
 
 impl Iterator for KinesisIterator {
-    type Item = Result<GetRecordsOutput, GetRecordsError>;
+    type Item = Result<GetRecordsOutput, RusotoError<GetRecordsError>>;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         self.token
