@@ -43,7 +43,7 @@ pub fn build_app() -> App<'static, 'static> {
         Region::CnNorthwest1,
     ]
     .iter()
-    .map(|x| x.name())
+    .map(Region::name)
     .collect::<Vec<&str>>();
     App::new("k-iter")
         .about("AWS Kinesis Stream Subscriber")
