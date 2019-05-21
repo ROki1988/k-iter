@@ -1,9 +1,9 @@
 use std;
 
+use bytes::Bytes;
 use rusoto_kinesis::Record;
 use serde_derive::Serialize;
 use serde_json;
-use bytes::Bytes;
 
 use crate::cli::DataFormat;
 
@@ -189,7 +189,7 @@ mod tests {
     fn test_verbose_utf8_string() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data:  Bytes::from("test-data"),
+            data: Bytes::from("test-data"),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),

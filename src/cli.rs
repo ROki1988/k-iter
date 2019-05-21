@@ -1,4 +1,4 @@
-use clap::{_clap_count_exprs, App, Arg, arg_enum, crate_authors, crate_version};
+use clap::{_clap_count_exprs, arg_enum, crate_authors, crate_version, App, Arg};
 use rusoto_core::Region;
 
 arg_enum! {
@@ -41,9 +41,10 @@ pub fn build_app() -> App<'static, 'static> {
         Region::UsGovWest1,
         Region::CnNorth1,
         Region::CnNorthwest1,
-    ].iter()
-        .map(|x| x.name())
-        .collect::<Vec<&str>>();
+    ]
+    .iter()
+    .map(|x| x.name())
+    .collect::<Vec<&str>>();
     App::new("k-iter")
         .about("AWS Kinesis Stream Subscriber")
         .version(crate_version!())
