@@ -26,7 +26,7 @@ impl<'a, Data> RecordRef<'a, Data> {
     fn new_raw_array(origin: &'a Record) -> RecordRef<'_, &[u8]> {
         RecordRef {
             approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
-            data: origin.data.as_slice(),
+            data: origin.data.as_ref(),
             encryption_type: &origin.encryption_type,
             partition_key: &origin.partition_key,
             sequence_number: &origin.sequence_number,
@@ -85,7 +85,7 @@ impl RecordsPrinter {
 fn records2string_only_data_raw_byte(records: &[Record]) -> String {
     records
         .iter()
-        .map(|x| format!("{:?}", x.data.as_slice()))
+        .map(|x| format!("{:?}", x.data.as_ref()))
         .collect::<Vec<String>>()
         .join("\n")
 }
@@ -133,6 +133,7 @@ fn records2string_verbose_utf8_string(records: &[Record]) -> String {
 #[cfg(test)]
 mod tests {
     use rusoto_kinesis::Record;
+    use bytes::Bytes;
 
     use super::*;
 
@@ -140,7 +141,7 @@ mod tests {
     fn test_only_data_utf8_string() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: "test-data".to_owned().into_bytes(),
+            data: Bytes::from("test-data"),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
@@ -156,7 +157,7 @@ mod tests {
     fn test_only_data_raw_byte() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: vec![0u8, 255u8],
+            data: Bytes::from(vec![0u8, 255u8]),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
@@ -172,7 +173,7 @@ mod tests {
     fn test_only_data_raw_string() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: vec![0u8, 255u8],
+            data: Bytes::from(vec![0u8, 255u8]),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
@@ -188,7 +189,7 @@ mod tests {
     fn test_verbose_utf8_string() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: "test-data".to_owned().into_bytes(),
+            data: Bytes::from("test-data"),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
@@ -204,7 +205,7 @@ mod tests {
     fn test_verbose_raw_byte() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: vec![0u8, 255u8],
+            data: Bytes::from(vec![0u8, 255u8]),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
@@ -220,7 +221,7 @@ mod tests {
     fn test_verbose_raw_string() {
         let records: Vec<Record> = vec![Record {
             approximate_arrival_timestamp: None,
-            data: vec![0u8, 255u8],
+            data: Bytes::from(vec![0u8, 255u8]),
             encryption_type: None,
             partition_key: "KEY".to_owned(),
             sequence_number: "1".to_owned(),
