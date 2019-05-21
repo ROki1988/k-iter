@@ -1,6 +1,6 @@
 [package]
 name = "k-iter"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["ROki1988 <roki.swindler@gmail.com>"]
 edition = "2018"
 
