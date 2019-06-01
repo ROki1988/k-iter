@@ -1,7 +1,7 @@
 use futures::{Future, Poll, Stream, Async};
 use rusoto_core::Region;
 use rusoto_core::RusotoError;
-use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError, GetShardIteratorInput, Kinesis, KinesisClient, Record};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError, GetShardIteratorInput, Kinesis, KinesisClient, Record, ListShardsInput, Shard, ListShardsError};
 use std::time::Duration;
 
 pub struct KinesisIterator {
@@ -11,6 +11,12 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
+    pub fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, RusotoError<ListShardsError>> {
+        let c = KinesisClient::new(region.clone());
+        c.list_shards(ListShardsInput{stream_name: Some(name.to_string()), ..Default::default()}).sync()
+            .map(|xs| xs.shards.unwrap())
+    }
+
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
         let c = KinesisClient::new(region);
         KinesisIterator {

@@ -74,8 +74,6 @@ pub fn build_app() -> App<'static, 'static> {
                 .long("shard-id")
                 .value_name("ID")
                 .help("Set shard id.")
-                .default_value("shardId-000000000000")
-                .takes_value(true),
         )
         .arg(
             Arg::with_name("iterator-type")
