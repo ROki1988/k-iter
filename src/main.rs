@@ -40,19 +40,25 @@ fn main() {
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
     let format_type: DataFormat = value_t_or_exit!(matches.value_of("data-format"), DataFormat);
 
+    let na = name.as_str();
+    let ia = id.as_str();
+    let ra = &region;
+    let ta = iter_type.to_string();
+    let ta = ta.as_str();
+
     let printer = printer::RecordsPrinter::new(matches.is_present("verbose"), format_type);
 
     let it = match iter_type {
         IteratorType::LATEST | IteratorType::TRIM_HORIZON => {
-            KinesisIterator::new(name, id, iter_type.to_string(), region)
+            KinesisIterator::new(na, ia, ta, ra)
         }
         IteratorType::AT_SEQUENCE_NUMBER | IteratorType::AFTER_SEQUENCE_NUMBER => {
             let seq = value_t_or_exit!(matches.value_of("sequence-number"), String);
-            KinesisIterator::new_with_sequence_number(name, id, iter_type.to_string(), seq, region)
+            KinesisIterator::new_with_sequence_number(na, ia, ta, seq.as_str(), ra)
         }
         IteratorType::AT_TIMESTAMP => {
             let timestamp = value_t_or_exit!(matches.value_of("timestamp"), f64);
-            KinesisIterator::new_with_timestamp(name, id, iter_type.to_string(), timestamp, region)
+            KinesisIterator::new_with_timestamp(na, ia, ta, timestamp, ra)
         }
     };
 
@@ -61,7 +67,7 @@ fn main() {
 
         let ltx = tx.clone();
         tokio::spawn({
-            Interval::new_interval(Duration::from_millis(1000))
+            Interval::new_interval(Duration::from_millis(500))
                 .map_err(|e| panic!("timer failed; err={:?}", e))
                 .zip(it.map_err(|e| println!("get error = err{:?}", e)))
                 .and_then(move |x| ltx.clone().send(x.1).map_err(|_| ()))
@@ -69,7 +75,7 @@ fn main() {
         });
 
         rx.for_each(move |value| {
-            println!("{}", printer.print(value.records.as_slice()));
+            if !value.records.is_empty() { println!("{}", printer.print(value.records.as_slice())); }
             Ok(())
         })
         .map(|_| ())

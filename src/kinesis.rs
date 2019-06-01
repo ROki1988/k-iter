@@ -1,10 +1,8 @@
-use futures::{Future, Poll, Stream};
+use futures::{Future, Poll, Stream, Async};
 use rusoto_core::Region;
 use rusoto_core::RusotoError;
-use rusoto_kinesis::{
-    GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
-    GetShardIteratorInput, Kinesis, KinesisClient,
-};
+use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError, GetShardIteratorInput, Kinesis, KinesisClient, Record};
+use std::time::Duration;
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -23,59 +21,59 @@ impl KinesisIterator {
     }
 
     pub fn new(
-        stream_name: String,
-        shard_id: String,
-        shard_iterator_type: String,
-        region: Region,
+        stream_name: & str,
+        shard_id: & str,
+        shard_iterator_type: & str,
+        region: &Region,
     ) -> Self {
         let input = GetShardIteratorInput {
-            shard_id,
-            shard_iterator_type,
-            stream_name,
+            shard_id: shard_id.to_string(),
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name: stream_name.to_string(),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisIterator::new_self(input, region.clone())
     }
 
     pub fn new_with_sequence_number(
-        stream_name: String,
-        shard_id: String,
-        shard_iterator_type: String,
-        sequence_number: String,
-        region: Region,
+        stream_name: & str,
+        shard_id: & str,
+        shard_iterator_type: & str,
+        sequence_number: & str,
+        region: &Region,
     ) -> Self {
         let input = GetShardIteratorInput {
-            shard_id,
-            shard_iterator_type,
-            stream_name,
-            starting_sequence_number: Some(sequence_number),
+            shard_id: shard_id.to_string(),
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name: stream_name.to_string(),
+            starting_sequence_number: Some(sequence_number.to_string()),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisIterator::new_self(input, region.clone())
     }
 
     pub fn new_with_timestamp(
-        stream_name: String,
-        shard_id: String,
-        shard_iterator_type: String,
+        stream_name: & str,
+        shard_id: & str,
+        shard_iterator_type: & str,
         timestamp: f64,
-        region: Region,
+        region: &Region,
     ) -> Self {
         let input = GetShardIteratorInput {
-            shard_id,
-            shard_iterator_type,
-            stream_name,
+            shard_id: shard_id.to_string(),
+            shard_iterator_type: shard_iterator_type.to_string(),
+            stream_name: stream_name.to_string(),
             timestamp: Some(timestamp),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region)
+        KinesisIterator::new_self(input, region.clone())
     }
 
-    pub fn get_iterator_token(&self) -> Result<Option<String>, RusotoError<GetShardIteratorError>> {
+    pub fn get_iterator_token(&self) -> Result<String, RusotoError<GetShardIteratorError>> {
         self.client
             .get_shard_iterator(self.input.clone())
             .sync()
-            .map(|x| x.shard_iterator)
+            .map(|x| x.shard_iterator.unwrap())
     }
 }
 
@@ -84,20 +82,20 @@ impl Stream for KinesisIterator {
     type Error = RusotoError<GetRecordsError>;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.token
+        futures::future::ok(self.token
             .clone()
-            .or_else(|| self.get_iterator_token().unwrap())
-            .map(|x| {
+            .unwrap_or(self.get_iterator_token().unwrap()))
+            .and_then(|x| {
                 self.token = Some(x.clone());
                 let r = GetRecordsInput {
                     shard_iterator: x,
                     ..Default::default()
                 };
-                self.client.get_records(r).map(|x| {
-                    self.token = x.next_shard_iterator.clone();
-                    x
+
+                self.client.get_records(r).map(|r   | {
+                    self.token = r.next_shard_iterator.clone();
+                    Async::Ready(Some(r))
                 })
-            })
-            .poll()
+            }).wait()
     }
 }
