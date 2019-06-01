@@ -132,8 +132,8 @@ fn records2string_verbose_utf8_string(records: &[Record]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use rusoto_kinesis::Record;
     use bytes::Bytes;
+    use rusoto_kinesis::Record;
 
     use super::*;
 

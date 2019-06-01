@@ -1,10 +1,10 @@
+use futures::{Future, Poll, Stream};
 use rusoto_core::Region;
 use rusoto_core::RusotoError;
 use rusoto_kinesis::{
     GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
     GetShardIteratorInput, Kinesis, KinesisClient,
 };
-use futures::{Future, Stream, Poll};
 
 pub struct KinesisIterator {
     client: KinesisClient,
@@ -79,27 +79,6 @@ impl KinesisIterator {
     }
 }
 
-impl Iterator for KinesisIterator {
-    type Item = Result<GetRecordsOutput, RusotoError<GetRecordsError>>;
-
-    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.token
-            .clone()
-            .or_else(|| self.get_iterator_token().unwrap())
-            .map(|x| {
-                self.token = Some(x.clone());
-                let r = GetRecordsInput {
-                    shard_iterator: x,
-                    ..Default::default()
-                };
-                self.client.get_records(r).sync().map(|x| {
-                    self.token = x.next_shard_iterator.clone();
-                    x
-                })
-            })
-    }
-}
-
 impl Stream for KinesisIterator {
     type Item = GetRecordsOutput;
     type Error = RusotoError<GetRecordsError>;
@@ -118,6 +97,7 @@ impl Stream for KinesisIterator {
                     self.token = x.next_shard_iterator.clone();
                     x
                 })
-            }).poll()
+            })
+            .poll()
     }
 }

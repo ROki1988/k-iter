@@ -6,9 +6,20 @@ use std::time;
 use clap::value_t_or_exit;
 use ctrlc;
 use rusoto_core::Region;
+use tokio::prelude::*;
+use tokio::runtime::Runtime;
+use tokio::timer::{Delay, Interval};
 
 use crate::cli::{DataFormat, IteratorType};
 use crate::kinesis::KinesisIterator;
+use futures::future::lazy;
+use futures::future::loop_fn;
+use futures::future::ok;
+use futures::future::Future;
+use futures::sync::mpsc;
+use futures::Stream;
+use rusoto_kinesis::GetRecordsOutput;
+use std::time::{Duration, Instant};
 
 mod cli;
 mod kinesis;
@@ -31,7 +42,7 @@ fn main() {
 
     let printer = printer::RecordsPrinter::new(matches.is_present("verbose"), format_type);
 
-    let mut it = match iter_type {
+    let it = match iter_type {
         IteratorType::LATEST | IteratorType::TRIM_HORIZON => {
             KinesisIterator::new(name, id, iter_type.to_string(), region)
         }
@@ -45,12 +56,25 @@ fn main() {
         }
     };
 
-    while running.load(Ordering::SeqCst) {
-        if let Some(Ok(n)) = it.next() {
-            thread::sleep(time::Duration::from_millis(1000));
-            if !n.records.is_empty() {
-                println!("{}", printer.print(&n.records));
-            }
-        }
-    }
+    let i = Interval::new_interval(Duration::from_millis(500));
+
+    tokio::run(lazy( || {
+        let (tx, rx) = tokio::sync::mpsc::channel::<GetRecordsOutput>(1000);
+
+        let ltx = tx.clone();
+        tokio::spawn({
+            Interval::new_interval(Duration::from_millis(1000))
+                .map_err(|e| panic!("timer failed; err={:?}", e))
+                .zip(it.map_err(|e| println!("get error = err{:?}", e)))
+                .and_then(move |x| ltx.clone().send(x.1).map_err(|_| ()))
+                .for_each(|_| Ok(()))
+        });
+
+        rx.for_each(move |value| {
+            println!("{}", printer.print(value.records.as_slice()));
+            Ok(())
+        })
+        .map(|_| ())
+        .map_err(|_| ())
+    }));
 }
