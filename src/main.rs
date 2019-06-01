@@ -19,7 +19,7 @@ use futures::future::Future;
 use futures::sync::mpsc;
 use futures::Stream;
 use rusoto_kinesis::GetRecordsOutput;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 mod cli;
 mod kinesis;
@@ -56,9 +56,7 @@ fn main() {
         }
     };
 
-    let i = Interval::new_interval(Duration::from_millis(500));
-
-    tokio::run(lazy( || {
+    tokio::run(lazy(|| {
         let (tx, rx) = tokio::sync::mpsc::channel::<GetRecordsOutput>(1000);
 
         let ltx = tx.clone();
