@@ -1,7 +1,10 @@
-use futures::{Future, Poll, Stream, Async};
+use futures::{Async, Future, Poll, Stream};
 use rusoto_core::Region;
 use rusoto_core::RusotoError;
-use rusoto_kinesis::{GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError, GetShardIteratorInput, Kinesis, KinesisClient, Record, ListShardsInput, Shard, ListShardsError};
+use rusoto_kinesis::{
+    GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
+    GetShardIteratorInput, Kinesis, KinesisClient, ListShardsError, ListShardsInput, Record, Shard,
+};
 use std::time::Duration;
 
 pub struct KinesisIterator {
@@ -11,10 +14,17 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
-    pub fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, RusotoError<ListShardsError>> {
+    pub fn get_shard_ids(
+        name: &str,
+        region: &Region,
+    ) -> Result<Vec<Shard>, RusotoError<ListShardsError>> {
         let c = KinesisClient::new(region.clone());
-        c.list_shards(ListShardsInput{stream_name: Some(name.to_string()), ..Default::default()}).sync()
-            .map(|xs| xs.shards.unwrap())
+        c.list_shards(ListShardsInput {
+            stream_name: Some(name.to_string()),
+            ..Default::default()
+        })
+        .sync()
+        .map(|xs| xs.shards.unwrap())
     }
 
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
@@ -27,9 +37,9 @@ impl KinesisIterator {
     }
 
     pub fn new(
-        stream_name: & str,
-        shard_id: & str,
-        shard_iterator_type: & str,
+        stream_name: &str,
+        shard_id: &str,
+        shard_iterator_type: &str,
         region: &Region,
     ) -> Self {
         let input = GetShardIteratorInput {
@@ -42,10 +52,10 @@ impl KinesisIterator {
     }
 
     pub fn new_with_sequence_number(
-        stream_name: & str,
-        shard_id: & str,
-        shard_iterator_type: & str,
-        sequence_number: & str,
+        stream_name: &str,
+        shard_id: &str,
+        shard_iterator_type: &str,
+        sequence_number: &str,
         region: &Region,
     ) -> Self {
         let input = GetShardIteratorInput {
@@ -59,9 +69,9 @@ impl KinesisIterator {
     }
 
     pub fn new_with_timestamp(
-        stream_name: & str,
-        shard_id: & str,
-        shard_iterator_type: & str,
+        stream_name: &str,
+        shard_id: &str,
+        shard_iterator_type: &str,
         timestamp: f64,
         region: &Region,
     ) -> Self {
@@ -88,20 +98,23 @@ impl Stream for KinesisIterator {
     type Error = RusotoError<GetRecordsError>;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        futures::future::ok(self.token
-            .clone()
-            .unwrap_or(self.get_iterator_token().unwrap()))
-            .and_then(|x| {
-                self.token = Some(x.clone());
-                let r = GetRecordsInput {
-                    shard_iterator: x,
-                    ..Default::default()
-                };
+        futures::future::ok(
+            self.token
+                .clone()
+                .unwrap_or(self.get_iterator_token().unwrap()),
+        )
+        .and_then(|x| {
+            self.token = Some(x.clone());
+            let r = GetRecordsInput {
+                shard_iterator: x,
+                ..Default::default()
+            };
 
-                self.client.get_records(r).map(|r   | {
-                    self.token = r.next_shard_iterator.clone();
-                    Async::Ready(Some(r))
-                })
-            }).wait()
+            self.client.get_records(r).map(|r| {
+                self.token = r.next_shard_iterator.clone();
+                Async::Ready(Some(r))
+            })
+        })
+        .wait()
     }
 }

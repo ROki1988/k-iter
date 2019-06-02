@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time;
 
-use clap::{value_t_or_exit, value_t};
+use clap::{value_t, value_t_or_exit, values_t};
 use ctrlc;
 use rusoto_core::Region;
 use tokio::prelude::*;
@@ -38,18 +38,23 @@ fn main() {
     let region = value_t_or_exit!(matches.value_of("region"), Region);
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
     let format_type: DataFormat = value_t_or_exit!(matches.value_of("data-format"), DataFormat);
-    let id: Option<String> = value_t!(matches.value_of("shard-id"), String).ok();
+    let id: Option<Vec<String>> = values_t!(matches.value_of("shard-id"), Vec<String>).ok();
 
     let printer = printer::RecordsPrinter::new(matches.is_present("verbose"), format_type);
 
-    let shards = id.map_or_else(|| {
-        KinesisIterator::get_shard_ids(name.as_str(), &region)
-            .expect("can't get shard ids")
-            .into_iter().map(|s| s.shard_id).collect()
-    }, |x| vec![x]);
+    let shards = id.map_or_else(
+        || {
+            KinesisIterator::get_shard_ids(name.as_str(), &region)
+                .expect("can't get shard ids")
+                .into_iter()
+                .map(|s| s.shard_id)
+                .collect()
+        },
+        |x| vec![x],
+    );
 
     tokio::run(lazy(move || {
-        let (tx, rx) = tokio::sync::mpsc::channel::<GetRecordsOutput>(1000 * shards.len() );
+        let (tx, rx) = tokio::sync::mpsc::channel::<GetRecordsOutput>(1000 * shards.len());
         let na = name.as_str();
         let ra = &region;
         let ta = iter_type.to_string();
@@ -81,7 +86,9 @@ fn main() {
         }
 
         rx.for_each(move |value| {
-            if !value.records.is_empty() { println!("{}", printer.print(value.records.as_slice())); }
+            if !value.records.is_empty() {
+                println!("{}", printer.print(value.records.as_slice()));
+            }
             Ok(())
         })
         .map(|_| ())
