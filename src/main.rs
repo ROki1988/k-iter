@@ -1,22 +1,16 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
-use std::time;
 
-use clap::{value_t, value_t_or_exit, values_t};
+use clap::{value_t_or_exit, values_t};
 use ctrlc;
 use rusoto_core::Region;
 use tokio::prelude::*;
-use tokio::runtime::Runtime;
-use tokio::timer::{Delay, Interval};
+use tokio::timer::Interval;
 
 use crate::cli::{DataFormat, IteratorType};
 use crate::kinesis::KinesisIterator;
 use futures::future::lazy;
-use futures::future::loop_fn;
-use futures::future::ok;
 use futures::future::Future;
-use futures::sync::mpsc;
 use futures::Stream;
 use rusoto_kinesis::GetRecordsOutput;
 use std::time::Duration;
@@ -38,19 +32,16 @@ fn main() {
     let region = value_t_or_exit!(matches.value_of("region"), Region);
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
     let format_type: DataFormat = value_t_or_exit!(matches.value_of("data-format"), DataFormat);
-    let id: Option<Vec<String>> = values_t!(matches.value_of("shard-id"), Vec<String>).ok();
+    let ids: Option<Vec<String>> = values_t!(matches.values_of("shard-id"), String).ok();
 
     let printer = printer::RecordsPrinter::new(matches.is_present("verbose"), format_type);
 
-    let shards = id.map_or_else(
-        || {
-            KinesisIterator::get_shard_ids(name.as_str(), &region)
-                .expect("can't get shard ids")
-                .into_iter()
-                .map(|s| s.shard_id)
-                .collect()
-        },
-        |x| vec![x],
+    let shards = ids.unwrap_or(
+        KinesisIterator::get_shard_ids(name.as_str(), &region)
+            .expect("can't get shard ids")
+            .into_iter()
+            .map(|s| s.shard_id)
+            .collect(),
     );
 
     tokio::run(lazy(move || {

@@ -3,9 +3,8 @@ use rusoto_core::Region;
 use rusoto_core::RusotoError;
 use rusoto_kinesis::{
     GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
-    GetShardIteratorInput, Kinesis, KinesisClient, ListShardsError, ListShardsInput, Record, Shard,
+    GetShardIteratorInput, Kinesis, KinesisClient, ListShardsError, ListShardsInput, Shard,
 };
-use std::time::Duration;
 
 pub struct KinesisIterator {
     client: KinesisClient,
