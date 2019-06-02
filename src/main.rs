@@ -36,13 +36,13 @@ fn main() {
 
     let printer = printer::RecordsPrinter::new(matches.is_present("verbose"), format_type);
 
-    let shards = ids.unwrap_or(
+    let shards = ids.unwrap_or_else(|| {
         KinesisIterator::get_shard_ids(name.as_str(), &region)
             .expect("can't get shard ids")
             .into_iter()
             .map(|s| s.shard_id)
-            .collect(),
-    );
+            .collect()
+    });
 
     tokio::run(lazy(move || {
         let (tx, rx) = tokio::sync::mpsc::channel::<GetRecordsOutput>(1000 * shards.len());
