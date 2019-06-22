@@ -13,6 +13,7 @@ use futures::future::Future;
 use futures::Stream;
 use rusoto_kinesis::GetRecordsOutput;
 use std::time::Duration;
+use futures::sink::Sink;
 
 mod cli;
 mod error;
@@ -67,15 +68,13 @@ fn main() {
             };
 
             tokio::spawn({
-                let mut ltx = tx.clone();
                 Interval::new_interval(Duration::from_millis(1000))
                     .map_err(|e| eprintln!("timer failed; err={:?}", e))
-                    .zip(it.map_err(|e| eprintln!("subsribe error = err{:?}", e)))
+                    .zip(it.map_err(|e| eprintln!("subscribe error = err{:?}", e)))
                     .map(|(_, r)| r)
-                    .for_each(move |x| {
-                        ltx.try_send(x)
-                            .map_err(|e| eprintln!("send error = err{:?}", e))
-                    })
+                    .forward(tx.clone().sink_map_err(|e| eprintln!("send error = err{:?}", e)))
+                    .and_then(|_| Ok(()))
+
             });
         }
 
