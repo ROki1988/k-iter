@@ -1,5 +1,4 @@
 use crate::error::{Error, ErrorKind};
-use futures::future::*;
 use futures::{Async, Future, Poll, Stream};
 use rusoto_core::Region;
 use rusoto_kinesis::{
@@ -90,7 +89,7 @@ impl KinesisShardIterator {
             .map_err(Into::into)
             .and_then(|x| {
                 x.shard_iterator
-                    .map_or_else(|| Err(Error::from(ErrorKind::Rusoto)), |token| Ok(token))
+                    .map_or_else(|| Err(Error::from(ErrorKind::Rusoto)), Ok)
             })
     }
 }
