@@ -83,13 +83,14 @@ impl KinesisShardIterator {
         KinesisShardIterator::new_self(input, region.clone())
     }
 
-    pub fn get_iterator_token(&self) -> impl Future<Item = String, Error = Error> {
+    pub fn get_iterator_token(&self) -> Result<String, Error> {
         self.client
             .get_shard_iterator(self.input.clone())
+            .sync()
             .map_err(Into::into)
             .and_then(|x| {
                 x.shard_iterator
-                    .map_or_else(|| err(Error::from(ErrorKind::Rusoto)), ok)
+                    .map_or_else(|| Err(Error::from(ErrorKind::Rusoto)), |token| Ok(token))
             })
     }
 }
@@ -114,10 +115,10 @@ impl Stream for KinesisShardIterator {
                 .map_err(Into::into)
                 .wait()
         } else {
-            self.get_iterator_token()
-                .map(|next| self.token = Some(next))
-                .wait()
-                .map(|_| Async::NotReady)
+            self.get_iterator_token().map(|next| {
+                self.token = Some(next);
+                Async::NotReady
+            }).map_err(Into::into)
         }
     }
 }
