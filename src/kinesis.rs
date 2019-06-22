@@ -7,13 +7,13 @@ use rusoto_kinesis::{
     ListShardsInput, Shard,
 };
 
-pub struct KinesisIterator {
+pub struct KinesisShardIterator {
     client: KinesisClient,
     input: GetShardIteratorInput,
     token: Option<String>,
 }
 
-impl KinesisIterator {
+impl KinesisShardIterator {
     pub fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, Error> {
         let c = KinesisClient::new(region.clone());
         c.list_shards(ListShardsInput {
@@ -27,7 +27,7 @@ impl KinesisIterator {
 
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
         let c = KinesisClient::new(region);
-        KinesisIterator {
+        KinesisShardIterator {
             client: c,
             input,
             token: None,
@@ -46,7 +46,7 @@ impl KinesisIterator {
             stream_name: stream_name.to_string(),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region.clone())
+        KinesisShardIterator::new_self(input, region.clone())
     }
 
     pub fn new_with_sequence_number(
@@ -63,7 +63,7 @@ impl KinesisIterator {
             starting_sequence_number: Some(sequence_number.to_string()),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region.clone())
+        KinesisShardIterator::new_self(input, region.clone())
     }
 
     pub fn new_with_timestamp(
@@ -80,7 +80,7 @@ impl KinesisIterator {
             timestamp: Some(timestamp),
             ..Default::default()
         };
-        KinesisIterator::new_self(input, region.clone())
+        KinesisShardIterator::new_self(input, region.clone())
     }
 
     pub fn get_iterator_token(&self) -> impl Future<Item = String, Error = Error> {
@@ -94,7 +94,7 @@ impl KinesisIterator {
     }
 }
 
-impl Stream for KinesisIterator {
+impl Stream for KinesisShardIterator {
     type Item = GetRecordsOutput;
     type Error = Error;
 

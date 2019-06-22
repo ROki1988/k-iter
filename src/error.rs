@@ -37,7 +37,6 @@ impl Display for Error {
 
 #[allow(dead_code)]
 impl Error {
-
     pub fn new(inner: Context<ErrorKind>) -> Error {
         Error { inner }
     }
