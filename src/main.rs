@@ -70,8 +70,8 @@ fn main() {
             let ltx = tx.clone();
             tokio::spawn({
                 Interval::new_interval(Duration::from_millis(1000))
-                    .map_err(|e| panic!("timer failed; err={:?}", e))
-                    .zip(it.map_err(|e| println!("get error = err{:?}", e)))
+                    .map_err(|e| eprintln!("timer failed; err={:?}", e))
+                    .zip(it.map_err(|e| eprintln!("get error = err{:?}", e)))
                     .and_then(move |x| ltx.clone().send(x.1).map_err(|_| ()))
                     .for_each(|_| Ok(()))
             });
@@ -83,7 +83,6 @@ fn main() {
             }
             Ok(())
         })
-        .map(|_| ())
         .map_err(|_| ())
     }));
 }
