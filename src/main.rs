@@ -10,10 +10,10 @@ use crate::cli::{DataFormat, IteratorType};
 use crate::kinesis::KinesisShardIterator;
 use futures::future::lazy;
 use futures::future::Future;
+use futures::sink::Sink;
 use futures::Stream;
 use rusoto_kinesis::GetRecordsOutput;
 use std::time::Duration;
-use futures::sink::Sink;
 
 mod cli;
 mod error;
@@ -72,9 +72,11 @@ fn main() {
                     .map_err(|e| eprintln!("timer failed; err={:?}", e))
                     .zip(it.map_err(|e| eprintln!("subscribe error = err{:?}", e)))
                     .map(|(_, r)| r)
-                    .forward(tx.clone().sink_map_err(|e| eprintln!("send error = err{:?}", e)))
+                    .forward(
+                        tx.clone()
+                            .sink_map_err(|e| eprintln!("send error = err{:?}", e)),
+                    )
                     .and_then(|_| Ok(()))
-
             });
         }
 

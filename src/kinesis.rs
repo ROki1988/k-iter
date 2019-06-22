@@ -115,10 +115,12 @@ impl Stream for KinesisShardIterator {
                 .map_err(Into::into)
                 .wait()
         } else {
-            self.get_iterator_token().map(|next| {
-                self.token = Some(next);
-                Async::NotReady
-            }).map_err(Into::into)
+            self.get_iterator_token()
+                .map(|next| {
+                    self.token = Some(next);
+                    Async::NotReady
+                })
+                .map_err(Into::into)
         }
     }
 }
