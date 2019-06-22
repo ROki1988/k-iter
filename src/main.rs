@@ -4,7 +4,6 @@ use std::sync::Arc;
 use clap::{value_t_or_exit, values_t};
 use ctrlc;
 use rusoto_core::Region;
-use tokio::prelude::*;
 use tokio::timer::Interval;
 
 use crate::cli::{DataFormat, IteratorType};
@@ -67,17 +66,16 @@ fn main() {
                 }
             };
 
-            let ltx = tx.clone();
             tokio::spawn({
+                let mut ltx = tx.clone();
                 Interval::new_interval(Duration::from_millis(1000))
                     .map_err(|e| eprintln!("timer failed; err={:?}", e))
                     .zip(it.map_err(|e| eprintln!("subsribe error = err{:?}", e)))
-                    .and_then(move |x| {
-                        ltx.clone()
-                            .send(x.1)
+                    .map(|(_, r)| r)
+                    .for_each(move |x| {
+                        ltx.try_send(x)
                             .map_err(|e| eprintln!("send error = err{:?}", e))
                     })
-                    .for_each(|_| Ok(()))
             });
         }
 
@@ -87,6 +85,6 @@ fn main() {
             }
             Ok(())
         })
-        .map_err(|_| ())
+        .map_err(|e| eprintln!("receive error = err{:?}", e))
     }));
 }
