@@ -71,8 +71,8 @@ fn main() {
             tokio::spawn({
                 Interval::new_interval(Duration::from_millis(1000))
                     .map_err(|e| eprintln!("timer failed; err={:?}", e))
-                    .zip(it.map_err(|e| eprintln!("get error = err{:?}", e)))
-                    .and_then(move |x| ltx.clone().send(x.1).map_err(|_| ()))
+                    .zip(it.map_err(|e| eprintln!("subsribe error = err{:?}", e)))
+                    .and_then(move |x| ltx.clone().send(x.1).map_err(|e| eprintln!("send error = err{:?}", e)))
                     .for_each(|_| Ok(()))
             });
         }
