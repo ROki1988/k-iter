@@ -74,8 +74,8 @@ pub fn build_app() -> App<'static, 'static> {
             Arg::with_name("shard-id")
                 .short("s")
                 .long("shard-id")
-                .value_name("ID")
-                .help("Set shard ids.")
+                .value_name("ID1,ID2")
+                .help("Set shard ids. If you don't set, iterate all shards")
         )
         .arg(
             Arg::with_name("iterator-type")
