@@ -1,9 +1,10 @@
+use crate::error::{Error, ErrorKind};
+use futures::future::*;
 use futures::{Async, Future, Poll, Stream};
 use rusoto_core::Region;
-use rusoto_core::RusotoError;
 use rusoto_kinesis::{
-    GetRecordsError, GetRecordsInput, GetRecordsOutput, GetShardIteratorError,
-    GetShardIteratorInput, Kinesis, KinesisClient, ListShardsError, ListShardsInput, Shard,
+    GetRecordsInput, GetRecordsOutput, GetShardIteratorInput, Kinesis, KinesisClient,
+    ListShardsInput, Shard,
 };
 
 pub struct KinesisIterator {
@@ -13,10 +14,7 @@ pub struct KinesisIterator {
 }
 
 impl KinesisIterator {
-    pub fn get_shard_ids(
-        name: &str,
-        region: &Region,
-    ) -> Result<Vec<Shard>, RusotoError<ListShardsError>> {
+    pub fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, Error> {
         let c = KinesisClient::new(region.clone());
         c.list_shards(ListShardsInput {
             stream_name: Some(name.to_string()),
@@ -24,6 +22,7 @@ impl KinesisIterator {
         })
         .sync()
         .map(|xs| xs.shards.unwrap())
+        .map_err(Into::into)
     }
 
     fn new_self(input: GetShardIteratorInput, region: Region) -> Self {
@@ -84,36 +83,41 @@ impl KinesisIterator {
         KinesisIterator::new_self(input, region.clone())
     }
 
-    pub fn get_iterator_token(&self) -> Result<String, RusotoError<GetShardIteratorError>> {
+    pub fn get_iterator_token(&self) -> impl Future<Item = String, Error = Error> {
         self.client
             .get_shard_iterator(self.input.clone())
-            .sync()
-            .map(|x| x.shard_iterator.unwrap())
+            .map_err(Into::into)
+            .and_then(|x| {
+                x.shard_iterator
+                    .map_or_else(|| err(Error::from(ErrorKind::Rusoto)), ok)
+            })
     }
 }
 
 impl Stream for KinesisIterator {
     type Item = GetRecordsOutput;
-    type Error = RusotoError<GetRecordsError>;
+    type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        futures::future::ok(
-            self.token
-                .clone()
-                .unwrap_or(self.get_iterator_token().unwrap()),
-        )
-        .and_then(|x| {
-            self.token = Some(x.clone());
+        if let Some(current) = &self.token {
             let r = GetRecordsInput {
-                shard_iterator: x,
+                shard_iterator: current.clone(),
                 ..Default::default()
             };
 
-            self.client.get_records(r).map(|r| {
-                self.token = r.next_shard_iterator.clone();
-                Async::Ready(Some(r))
-            })
-        })
-        .wait()
+            self.client
+                .get_records(r)
+                .map(|r| {
+                    self.token = r.next_shard_iterator.clone();
+                    Async::Ready(Some(r))
+                })
+                .map_err(Into::into)
+                .wait()
+        } else {
+            self.get_iterator_token()
+                .map(|next| self.token = Some(next))
+                .wait()
+                .map(|_| Async::NotReady)
+        }
     }
 }

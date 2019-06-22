@@ -16,6 +16,7 @@ use rusoto_kinesis::GetRecordsOutput;
 use std::time::Duration;
 
 mod cli;
+mod error;
 mod kinesis;
 mod printer;
 

@@ -2,6 +2,7 @@ use clap::{_clap_count_exprs, arg_enum, crate_authors, crate_version, App, Arg};
 use rusoto_core::Region;
 
 arg_enum! {
+    #[allow(non_camel_case_types)]
     #[derive(PartialEq, Debug)]
     pub enum IteratorType {
         LATEST,
@@ -13,6 +14,7 @@ arg_enum! {
 }
 
 arg_enum! {
+    #[allow(non_camel_case_types)]
     #[derive(PartialEq, Debug)]
     pub enum DataFormat {
         RAW_BYTES,
