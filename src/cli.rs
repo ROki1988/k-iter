@@ -2,6 +2,7 @@ use clap::{_clap_count_exprs, arg_enum, crate_authors, crate_version, App, Arg};
 use rusoto_core::Region;
 
 arg_enum! {
+    #[allow(non_camel_case_types)]
     #[derive(PartialEq, Debug)]
     pub enum IteratorType {
         LATEST,
@@ -13,6 +14,7 @@ arg_enum! {
 }
 
 arg_enum! {
+    #[allow(non_camel_case_types)]
     #[derive(PartialEq, Debug)]
     pub enum DataFormat {
         RAW_BYTES,
@@ -72,10 +74,8 @@ pub fn build_app() -> App<'static, 'static> {
             Arg::with_name("shard-id")
                 .short("s")
                 .long("shard-id")
-                .value_name("ID")
-                .help("Set shard id.")
-                .default_value("shardId-000000000000")
-                .takes_value(true),
+                .value_name("ID1,ID2")
+                .help("Set shard ids. If you don't set, iterate all shards")
         )
         .arg(
             Arg::with_name("iterator-type")

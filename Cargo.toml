@@ -1,6 +1,6 @@
 [package]
 name = "k-iter"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["ROki1988 <roki.swindler@gmail.com>"]
 edition = "2018"
 
@@ -13,3 +13,6 @@ serde = "1.0.2"
 serde_derive = "1.0.2"
 serde_json = "1.0.1"
 bytes = { version = "0.4.12", features = ["serde"] }
+futures = "0.1.27"
+tokio = "0.1.20"
+failure = "0.1.5"
