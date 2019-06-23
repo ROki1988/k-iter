@@ -11,9 +11,11 @@ k-iter -n stream -r ap-northeast-1
 
 ## Options
 
-```bash
+```shell
+AWS Kinesis Stream Subscriber
+
 USAGE:
-    k-iter.exe [FLAGS] [OPTIONS] --region <NAME> --stream-name <NAME>
+    k-iter [FLAGS] [OPTIONS] --region <NAME> --stream-name <NAME>
 
 FLAGS:
     -h, --help       Prints help information
@@ -31,7 +33,7 @@ OPTIONS:
                                    north-1, cn-northwest-1]
         --sequence-number <NUM>    Set Sequence number when Iterator Type is AT_SEQUENCE_NUMBER or
                                    AFTER_SEQUENCE_NUMBER.
-    -s, --shard-id <ID>            Set shard ids.
+    -s, --shard-id <ID1 ID2>...    Set shard ids. If you don't set, iterate all shards
     -n, --stream-name <NAME>       Sets a stream name.
         --timestamp <TIMESTAMP>    Set timestamp(UNIX Epoch milliseconds) when Iterator Type is AT_TIMESTAMP.
 ```
