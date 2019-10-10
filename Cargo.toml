@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 clap = "2.31.2"
 rusoto_core = "0.40.0"
-rusoto_kinesis = "0.40.0"
+rusoto_kinesis = "0.41.0"
 ctrlc = { version = "3.0", features = ["termination"] }
 serde = "1.0.2"
 serde_derive = "1.0.2"
