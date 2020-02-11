@@ -88,7 +88,10 @@ impl KinesisShardIterator {
             .get_shard_iterator(self.input.clone())
             .await
             .map_err(Into::into)
-            .and_then(|x| x.shard_iterator.ok_or_else(|| Error::from(ErrorKind::Rusoto)))
+            .and_then(|x| {
+                x.shard_iterator
+                    .ok_or_else(|| Error::from(ErrorKind::Rusoto))
+            })
     }
 
     pub async fn get_records(&self, token: &str) -> Result<GetRecordsOutput, Error> {
