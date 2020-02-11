@@ -13,6 +13,7 @@ use futures::sink::SinkExt;
 use futures::{self, StreamExt, TryStreamExt};
 use rusoto_kinesis::GetRecordsOutput;
 use std::time::Duration;
+use std::process::exit;
 
 mod cli;
 mod error;
@@ -82,12 +83,12 @@ async fn main() {
         });
     }
 
-    rx.take_while(|_| futures::future::ready(running.load(Ordering::SeqCst)))
-        .for_each(|value| {
-            if !value.records.is_empty() {
-                println!("{}", printer.print(value.records.as_slice()));
-            }
-            futures::future::ready(())
-        })
-        .await
+    rx.for_each(|value| {
+        if !running.load(Ordering::SeqCst) { exit(0)} ;
+        if !value.records.is_empty() {
+            println!("{}", printer.print(value.records.as_slice()));
+        }
+        futures::future::ready(())
+    })
+    .await
 }
