@@ -86,11 +86,3 @@ impl From<TimeError> for Error {
         }
     }
 }
-
-//impl<T> From<SendError<T>> for Error {
-//    fn from(error: SendError<T>) -> Error {
-//        Error {
-//            inner: error.context(ErrorKind::Tokio),
-//        }
-//    }
-//}
