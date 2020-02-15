@@ -94,7 +94,7 @@ impl KinesisShardIterator {
             })
     }
 
-    pub async fn get_records(&self, token: &str) -> Result<GetRecordsOutput, Error> {
+    async fn get_records(&self, token: &str) -> Result<GetRecordsOutput, Error> {
         let r = GetRecordsInput {
             shard_iterator: token.to_owned(),
             ..Default::default()
