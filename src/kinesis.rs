@@ -1,5 +1,6 @@
 use crate::error::{Error, ErrorKind};
-use futures::{Async, Future, Poll, Stream};
+use async_stream::try_stream;
+use futures::{Stream, TryFutureExt};
 use rusoto_core::Region;
 use rusoto_kinesis::{
     GetRecordsInput, GetRecordsOutput, GetShardIteratorInput, Kinesis, KinesisClient,
@@ -13,13 +14,13 @@ pub struct KinesisShardIterator {
 }
 
 impl KinesisShardIterator {
-    pub fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, Error> {
+    pub async fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, Error> {
         let c = KinesisClient::new(region.clone());
         c.list_shards(ListShardsInput {
             stream_name: Some(name.to_string()),
             ..Default::default()
         })
-        .sync()
+        .await
         .map(|xs| xs.shards.unwrap())
         .map_err(Into::into)
     }
@@ -82,44 +83,39 @@ impl KinesisShardIterator {
         KinesisShardIterator::new_self(input, region.clone())
     }
 
-    pub fn get_iterator_token(&self) -> Result<String, Error> {
+    pub async fn get_iterator_token(&self) -> Result<String, Error> {
         self.client
             .get_shard_iterator(self.input.clone())
-            .sync()
+            .await
             .map_err(Into::into)
             .and_then(|x| {
                 x.shard_iterator
-                    .map_or_else(|| Err(Error::from(ErrorKind::Rusoto)), Ok)
+                    .ok_or_else(|| Error::from(ErrorKind::Rusoto))
             })
     }
-}
 
-impl Stream for KinesisShardIterator {
-    type Item = GetRecordsOutput;
-    type Error = Error;
+    async fn get_records(&self, token: &str) -> Result<GetRecordsOutput, Error> {
+        let r = GetRecordsInput {
+            shard_iterator: token.to_owned(),
+            ..Default::default()
+        };
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        if let Some(current) = &self.token {
-            let r = GetRecordsInput {
-                shard_iterator: current.clone(),
-                ..Default::default()
-            };
+        self.client.get_records(r).map_err(Into::into).await
+    }
 
-            self.client
-                .get_records(r)
-                .map(|r| {
+    pub fn stream(mut self) -> impl Stream<Item = Result<GetRecordsOutput, Error>> {
+        try_stream! {
+            loop {
+                if let Some(current) = &self.token {
+                    let r = self.get_records(current).await?;
                     self.token = r.next_shard_iterator.clone();
-                    Async::Ready(Some(r))
-                })
-                .map_err(Into::into)
-                .wait()
-        } else {
-            self.get_iterator_token()
-                .map(|next| {
+                    yield r;
+                } else {
+                    let next = self.get_iterator_token().await?;
                     self.token = Some(next);
-                    Async::NotReady
-                })
-                .map_err(Into::into)
+                    continue;
+                }
+            }
         }
     }
 }

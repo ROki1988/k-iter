@@ -3,8 +3,8 @@ use rusoto_core::RusotoError;
 use rusoto_kinesis::{GetRecordsError, GetShardIteratorError, ListShardsError};
 use std::fmt;
 use std::fmt::Display;
-use tokio::sync::mpsc::error::SendError;
-use tokio::timer::Error as TimerError;
+
+use tokio::time::Error as TimeError;
 
 #[derive(Fail, Debug)]
 pub enum ErrorKind {
@@ -20,7 +20,7 @@ pub struct Error {
 }
 
 impl Fail for Error {
-    fn cause(&self) -> Option<&Fail> {
+    fn cause(&self) -> Option<&dyn Fail> {
         self.inner.cause()
     }
 
@@ -79,16 +79,8 @@ impl From<RusotoError<ListShardsError>> for Error {
     }
 }
 
-impl From<TimerError> for Error {
-    fn from(error: TimerError) -> Error {
-        Error {
-            inner: error.context(ErrorKind::Tokio),
-        }
-    }
-}
-
-impl From<SendError> for Error {
-    fn from(error: SendError) -> Error {
+impl From<TimeError> for Error {
+    fn from(error: TimeError) -> Error {
         Error {
             inner: error.context(ErrorKind::Tokio),
         }
