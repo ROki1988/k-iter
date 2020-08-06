@@ -16,4 +16,4 @@ bytes = { version = "0.5.4", features = ["serde"] }
 futures = "0.3.4"
 tokio = {version = "0.2.11", features = ["full"], default-features = false}
 failure = "0.1.5"
-async-stream = "0.2.1"
+async-stream = "0.3.0"
