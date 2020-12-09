@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind};
+use anyhow::Result;
 use async_stream::try_stream;
 use futures::{Stream, TryFutureExt};
 use rusoto_core::Region;
@@ -14,7 +14,7 @@ pub struct KinesisShardIterator {
 }
 
 impl KinesisShardIterator {
-    pub async fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>, Error> {
+    pub async fn get_shard_ids(name: &str, region: &Region) -> Result<Vec<Shard>> {
         let c = KinesisClient::new(region.clone());
         c.list_shards(ListShardsInput {
             stream_name: Some(name.to_string()),
@@ -83,18 +83,18 @@ impl KinesisShardIterator {
         KinesisShardIterator::new_self(input, region.clone())
     }
 
-    pub async fn get_iterator_token(&self) -> Result<String, Error> {
+    pub async fn get_iterator_token(&self) -> Result<String> {
         self.client
             .get_shard_iterator(self.input.clone())
             .await
             .map_err(Into::into)
             .and_then(|x| {
                 x.shard_iterator
-                    .ok_or_else(|| Error::from(ErrorKind::Rusoto))
+                    .ok_or_else(|| anyhow::anyhow!("None iterator token"))
             })
     }
 
-    async fn get_records(&self, token: &str) -> Result<GetRecordsOutput, Error> {
+    async fn get_records(&self, token: &str) -> Result<GetRecordsOutput> {
         let r = GetRecordsInput {
             shard_iterator: token.to_owned(),
             ..Default::default()
@@ -103,7 +103,7 @@ impl KinesisShardIterator {
         self.client.get_records(r).map_err(Into::into).await
     }
 
-    pub fn stream(mut self) -> impl Stream<Item = Result<GetRecordsOutput, Error>> {
+    pub fn stream(mut self) -> impl Stream<Item = Result<GetRecordsOutput>> {
         try_stream! {
             loop {
                 if let Some(current) = &self.token {

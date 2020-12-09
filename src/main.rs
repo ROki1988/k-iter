@@ -16,7 +16,6 @@ use std::time::Duration;
 use std::process::exit;
 
 mod cli;
-mod error;
 mod kinesis;
 mod printer;
 
