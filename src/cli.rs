@@ -1,4 +1,4 @@
-use clap::{_clap_count_exprs, arg_enum, crate_authors, crate_version, App, Arg};
+use clap::{arg_enum, crate_authors, crate_version, App, Arg};
 use rusoto_core::Region;
 
 arg_enum! {
