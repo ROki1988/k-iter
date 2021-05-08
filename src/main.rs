@@ -2,8 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use clap::{value_t_or_exit, values_t};
-use ctrlc;
-use rusoto_core::Region;
+use kinesis_sdk::Region;
 use tokio::time;
 
 use crate::cli::{DataFormat, IteratorType};
@@ -11,9 +10,11 @@ use crate::kinesis::KinesisShardIterator;
 
 use futures::sink::SinkExt;
 use futures::{self, StreamExt, TryStreamExt};
-use rusoto_kinesis::GetRecordsOutput;
-use std::time::Duration;
+use kinesis_sdk::output::GetRecordsOutput;
+use std::option::Option::Some;
 use std::process::exit;
+use std::time::Duration;
+use tokio_stream::wrappers::IntervalStream;
 
 mod cli;
 mod kinesis;
@@ -30,7 +31,7 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     let name = value_t_or_exit!(matches.value_of("stream-name"), String);
-    let region: Region = value_t_or_exit!(matches.value_of("region"), Region);
+    let region: Region = Region::new(value_t_or_exit!(matches.value_of("region"), String));
     let iter_type: IteratorType = value_t_or_exit!(matches.value_of("iterator-type"), IteratorType);
     let format_type: DataFormat = value_t_or_exit!(matches.value_of("data-format"), DataFormat);
     let ids: Option<Vec<String>> = values_t!(matches.values_of("shard-id"), String).ok();
@@ -44,7 +45,7 @@ async fn main() {
             .await
             .expect("can't get shard ids")
             .into_iter()
-            .map(|s| s.shard_id)
+            .flat_map(|s| s.shard_id)
             .collect()
     };
 
@@ -71,7 +72,7 @@ async fn main() {
 
         let t = tx.clone();
         tokio::spawn(async move {
-            time::interval(Duration::from_millis(1000))
+            IntervalStream::new(time::interval(Duration::from_millis(1000)))
                 .zip(
                     it.stream()
                         .map_err(|e| eprintln!("subscribe error = err{:?}", e)),
@@ -83,9 +84,11 @@ async fn main() {
     }
 
     rx.for_each(|value| {
-        if !running.load(Ordering::SeqCst) { exit(0)} ;
-        if !value.records.is_empty() {
-            println!("{}", printer.print(value.records.as_slice()));
+        if !running.load(Ordering::SeqCst) {
+            exit(0)
+        };
+        if let Some(records) = value.records {
+            println!("{}", printer.print(records.as_slice()));
         }
         futures::future::ready(())
     })

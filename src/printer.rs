@@ -1,8 +1,5 @@
-use std;
-
-use rusoto_kinesis::Record;
+use kinesis_sdk::model::{EncryptionType, Record};
 use serde_derive::Serialize;
-use serde_json;
 
 use crate::cli::DataFormat;
 
@@ -10,23 +7,25 @@ use crate::cli::DataFormat;
 struct RecordRef<'a, Data> {
     #[serde(rename = "ApproximateArrivalTimestamp")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub approximate_arrival_timestamp: &'a Option<f64>,
+    pub approximate_arrival_timestamp: Option<f64>,
     #[serde(rename = "Data")]
     pub data: Data,
     #[serde(rename = "EncryptionType")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub encryption_type: &'a Option<String>,
+    pub encryption_type: &'a Option<EncryptionType>,
     #[serde(rename = "PartitionKey")]
-    pub partition_key: &'a String,
+    pub partition_key: &'a Option<String>,
     #[serde(rename = "SequenceNumber")]
-    pub sequence_number: &'a String,
+    pub sequence_number: &'a Option<String>,
 }
 
 impl<'a, Data> RecordRef<'a, Data> {
-    fn new_raw_array(origin: &'a Record) -> RecordRef<'_, &[u8]> {
+    fn new_raw_array(origin: &'a Record) -> RecordRef<'_, Option<&[u8]>> {
         RecordRef {
-            approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
-            data: origin.data.as_ref(),
+            approximate_arrival_timestamp: origin
+                .approximate_arrival_timestamp
+                .map(|x| x.epoch_fractional_seconds()),
+            data: origin.data.as_ref().map(|x| x.as_ref()),
             encryption_type: &origin.encryption_type,
             partition_key: &origin.partition_key,
             sequence_number: &origin.sequence_number,
@@ -35,18 +34,29 @@ impl<'a, Data> RecordRef<'a, Data> {
 
     fn new_raw_string(origin: &'a Record) -> RecordRef<'_, String> {
         RecordRef {
-            approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
-            data: origin.data.iter().map(|&s| format!("{:02x}", s)).collect(),
+            approximate_arrival_timestamp: origin
+                .approximate_arrival_timestamp
+                .map(|x| x.epoch_fractional_seconds()),
+            data: origin
+                .data
+                .iter()
+                .flat_map(|s| s.as_ref().iter().map(|x| format!("{:02x}", x)))
+                .collect(),
             encryption_type: &origin.encryption_type,
             partition_key: &origin.partition_key,
             sequence_number: &origin.sequence_number,
         }
     }
 
-    fn new_utf8_string(origin: &'a Record) -> RecordRef<'_, &str> {
+    fn new_utf8_string(origin: &'a Record) -> RecordRef<'_, Option<&'a str>> {
         RecordRef {
-            approximate_arrival_timestamp: &origin.approximate_arrival_timestamp,
-            data: std::str::from_utf8(&origin.data).unwrap(),
+            approximate_arrival_timestamp: origin
+                .approximate_arrival_timestamp
+                .map(|x| x.epoch_fractional_seconds()),
+            data: origin
+                .data
+                .as_ref()
+                .map(|x| std::str::from_utf8(&x.as_ref()).unwrap()),
             encryption_type: &origin.encryption_type,
             partition_key: &origin.partition_key,
             sequence_number: &origin.sequence_number,
@@ -85,7 +95,8 @@ impl RecordsPrinter {
 fn records2string_only_data_raw_byte(records: &[Record]) -> String {
     records
         .iter()
-        .map(|x| format!("{:?}", x.data.as_ref()))
+        .filter_map(|r| r.data.as_ref())
+        .map(|x| format!("{:?}", x.as_ref()))
         .collect::<Vec<String>>()
         .join("\n")
 }
@@ -93,7 +104,8 @@ fn records2string_only_data_raw_byte(records: &[Record]) -> String {
 fn records2string_only_data_raw_string(records: &[Record]) -> String {
     records
         .iter()
-        .map(|x| x.data.iter().map(|&s| format!("{:02x}", s)).collect())
+        .filter_map(|x| x.data.as_ref())
+        .map(|x| x.as_ref().iter().map(|&s| format!("{:02x}", s)).collect())
         .collect::<Vec<String>>()
         .join("\n")
 }
@@ -101,7 +113,8 @@ fn records2string_only_data_raw_string(records: &[Record]) -> String {
 fn records2string_only_data_utf8_string(records: &[Record]) -> String {
     records
         .iter()
-        .filter_map(|x| std::str::from_utf8(&x.data).ok())
+        .flat_map(|x| x.data.as_ref())
+        .filter_map(|x| std::str::from_utf8(x.as_ref()).ok())
         .collect::<Vec<&str>>()
         .join("\n")
 }
@@ -132,20 +145,29 @@ fn records2string_verbose_utf8_string(records: &[Record]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use bytes::Bytes;
-    use rusoto_kinesis::Record;
-
     use super::*;
+    use kinesis_sdk::model::Record;
+    use kinesis_sdk::Blob;
+
+    fn string_record() -> Record {
+        kinesis_sdk::model::record::Builder::default()
+            .data(Blob::new("test-data"))
+            .partition_key("KEY")
+            .sequence_number("1")
+            .build()
+    }
+
+    fn bin_record() -> Record {
+        kinesis_sdk::model::record::Builder::default()
+            .data(Blob::new(vec![0u8, 255u8]))
+            .partition_key("KEY")
+            .sequence_number("1")
+            .build()
+    }
 
     #[test]
     fn test_only_data_utf8_string() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from("test-data"),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![string_record()];
 
         assert_eq!(
             "test-data".to_owned(),
@@ -155,13 +177,7 @@ mod tests {
 
     #[test]
     fn test_only_data_raw_byte() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from(vec![0u8, 255u8]),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![bin_record()];
 
         assert_eq!(
             "[0, 255]".to_owned(),
@@ -171,13 +187,7 @@ mod tests {
 
     #[test]
     fn test_only_data_raw_string() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from(vec![0u8, 255u8]),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![bin_record()];
 
         assert_eq!(
             "00ff".to_owned(),
@@ -187,13 +197,7 @@ mod tests {
 
     #[test]
     fn test_verbose_utf8_string() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from("test-data"),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![string_record()];
 
         assert_eq!(
             r#"{"Data":"test-data","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),
@@ -203,13 +207,7 @@ mod tests {
 
     #[test]
     fn test_verbose_raw_byte() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from(vec![0u8, 255u8]),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![bin_record()];
 
         assert_eq!(
             r#"{"Data":[0,255],"PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),
@@ -219,13 +217,7 @@ mod tests {
 
     #[test]
     fn test_verbose_raw_string() {
-        let records: Vec<Record> = vec![Record {
-            approximate_arrival_timestamp: None,
-            data: Bytes::from(vec![0u8, 255u8]),
-            encryption_type: None,
-            partition_key: "KEY".to_owned(),
-            sequence_number: "1".to_owned(),
-        }];
+        let records: Vec<Record> = vec![bin_record()];
 
         assert_eq!(
             r#"{"Data":"00ff","PartitionKey":"KEY","SequenceNumber":"1"}"#.to_owned(),

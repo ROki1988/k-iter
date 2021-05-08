@@ -1,5 +1,4 @@
 use clap::{arg_enum, crate_authors, crate_version, App, Arg};
-use rusoto_core::Region;
 
 arg_enum! {
     #[allow(non_camel_case_types)]
@@ -24,29 +23,6 @@ arg_enum! {
 }
 
 pub fn build_app() -> App<'static, 'static> {
-    let region = [
-        Region::ApNortheast1,
-        Region::ApNortheast2,
-        Region::ApSouth1,
-        Region::ApSoutheast1,
-        Region::ApSoutheast2,
-        Region::CaCentral1,
-        Region::EuCentral1,
-        Region::EuWest1,
-        Region::EuWest2,
-        Region::EuWest3,
-        Region::SaEast1,
-        Region::UsEast1,
-        Region::UsEast2,
-        Region::UsWest1,
-        Region::UsWest2,
-        Region::UsGovWest1,
-        Region::CnNorth1,
-        Region::CnNorthwest1,
-    ]
-    .iter()
-    .map(Region::name)
-    .collect::<Vec<&str>>();
     App::new("k-iter")
         .about("AWS Kinesis Stream Subscriber")
         .version(crate_version!())
@@ -65,7 +41,6 @@ pub fn build_app() -> App<'static, 'static> {
                 .short("r")
                 .long("region")
                 .required(true)
-                .possible_values(&region)
                 .value_name("NAME")
                 .help("Sets a region name.")
                 .takes_value(true),

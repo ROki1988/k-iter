@@ -6,14 +6,18 @@ edition = "2018"
 
 [dependencies]
 clap = "2.31.2"
-rusoto_core = "0.45.0"
-rusoto_kinesis = "0.45.0"
+kinesis_sdk = { git = "https://github.com/awslabs/aws-sdk-rust", tag = "v0.0.3-alpha", package = "aws-sdk-kinesis" }
+smithy_types = { git = "https://github.com/awslabs/aws-sdk-rust", tag = "v0.0.3-alpha", package = "smithy-types" }
 ctrlc = { version = "3.0", features = ["termination"] }
 serde = "1.0.2"
 anyhow = "1.0.35"
 serde_derive = "1.0.104"
 serde_json = "1.0.47"
-bytes = { version = "0.5.4", features = ["serde"] }
+bytes = { version = "1", features = ["serde"] }
 futures = "0.3.4"
-tokio = {version = "0.2.11", features = ["full"], default-features = false}
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.5"
 async-stream = "0.3.0"
+
+[profile.dev]
+split-debuginfo = "unpacked"
